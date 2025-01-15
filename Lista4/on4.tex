@@ -1,0 +1,384 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}   
+\usepackage[polish.sty]{babel}   
+\usepackage[a4paper, top=5cm, bottom=3.5cm, left=1.5cm, right=1.5cm]{geometry} 
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsfonts}
+\usepackage[figurename=Rysunek,tablename=Tabela]{caption}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{float}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+
+    \title{\textbf{Obliczenia naukowe \\ \large Lista 4}}
+    \author{Aleksandra Czarniecka (272385)}
+    \date{grudzień 2024}
+ 
+    \addtolength{\topmargin}{-3 cm}
+    \addtolength{\textheight}{3 cm}
+\begin{document}
+\maketitle
+\section*{Wstęp: Przedstawienie problemu interpolacji}
+Interpolacja jest kluczowym zagadnieniem w analizie numerycznej, które polega na przybliżeniu funkcji za pomocą wielomianów, bazując na wartościach funkcji w wybranych punktach, zwanych węzłami.
+\\ \\
+Istnieje $n+1$ par $(x_i, y_i = f(x_i))$, gdzie $\forall_{i, j} x_i \neq x_j$ i $i \in \{0, \dots, n\}$. 
+Problem interpolacji polega na znalezieniu wielomianu \(p_n(x)\) stopnia co najwyżej \(n\), który przechodzi przez zadane węzły interpolacyjne \((x_i, y_i)\), gdzie \(x_i\) są parami różne, a \(y_i = f(x_i)\). Z teorii wiadomo, że taki wielomian istnieje i jest dokładnie jeden.
+
+\subsection*{Naturalna postać wielomianu}
+
+Wielomian \(p_n(x)\) można zapisać w postaci naturalnej:
+\[
+p_n(x) = a_0 + a_1x + a_2x^2 + \ldots + a_nx^n,
+\]
+gdzie współczynniki \(a_0, a_1, \ldots, a_n\) wyznacza się, rozwiązując układ równań z macierzą Vandermonde’a. Niestety, taka metoda jest numerycznie niestabilna, dlatego korzysta się z innych reprezentacji wielomianu.
+
+\subsection*{Postać Newtona}
+
+Aby uniknąć problemów numerycznych, zapisujemy wielomian w postaci Newtona, korzystając z bazy wielomianów:
+\[
+q_0(x) = 1, \quad q_1(x) = (x - x_0), \quad q_2(x) = (x - x_0)(x - x_1), \quad \ldots, \quad q_n(x) = \prod_{j=0}^{n-1}(x - x_j).
+\]
+
+Wówczas wielomian \(p_n(x)\) można wyrazić jako:
+\[
+p_n(x) = \sum_{i=0}^n c_i \, q_i(x),
+\]
+gdzie współczynniki \(c_i\) wyznacza się, korzystając z tzw. ilorazów różnicowych, czym zajmiemy się w zadaniu 1. Następnie w zadaniu 2 wyliczymy wartość wielomianu interpolacyjnego w danym punkcie, a w zadaniu 3 przekształcimy ten wielomian do postaci normalnej odkrywając jego stopień. Ostatecznie w zadaniu 5 przedstawiony zostanie wykres, na którym umieszczona zostanie wielomian interpolacyjny oraz funkcja, którą interpoluje.
+
+\section{Ilorazy różnicowe}
+\subsection{Opis problemu}
+Problemem zadania jest napisanie funkcji obliczającej ilorazy różnicowe bez użycia tablicy dwuwymiarowej.\\ \\
+\texttt{function ilorazyRoznicowe (x::Vector\{Float64\}, f::Vector\{Float64\})}
+\\ 
+\textbf{Dane:}
+\begin{itemize}[label={}]
+    \item \texttt{x} - wektor długości $n+1$ zawierający węzły $x_0, \dots, x_n$ 
+        \begin{itemize}[label={}]
+            \item \texttt{x[1]} = $x_0$, ..., \texttt{x[n+1]} = $x_n$
+        \end{itemize}
+    \item \texttt{f} - wektor długości $n+1$ zawierający wartości interpolowanej funkcji w węzłach $f(x_0), \dots, f(x_n)$
+\end{itemize}
+\textbf{Wyniki:}
+\begin{itemize}[label={}]
+    \item \texttt{fx} - wektor długości $n+1$ zawierający obliczone ilorazy różnicowe
+    \begin{itemize}[label={}]
+        \item \texttt{fx[1]} = $f[x_0]$,
+        \item \texttt{fx[2]} = $f[x_0, x_1]$, ..., \texttt{fx[n]} = $f[x_0, \dots, x_{n-1}]$, \texttt{fx[n+1]} = $f[x_0, \dots, x_n]$.
+    \end{itemize}
+\end{itemize}
+\subsection{Rozwiązanie}
+Ilorazy różnicowe są podstawą interpolacji Newtona w postaci ilorazowej.
+Rozwiązanie tego problemu polega na zaimplementowaniu algorytmu, który oblicza ilorazy różnicowe mając dane pary $(x_i, y_i = f(x_i))$.  Wiadomo, że:
+\[f[x_i] = f(x_i)\]
+Pozostałe ilorazy różnicowe spełniają równość:
+\[f[x_i, x_{i+1}, \dots, x_k] = \frac{f[x_{i+1}, x_{i+2}, \dots, x_k] - f[x_i, x_{i+1}, \dots, x_{k-1}]}{x_k - x_i}\].
+\\ Chcąc uniknąć tworzenia macierzy dwuwymiarowej można zauważyć, że po wyliczeniu wszystkich ilorazów różnicowych zależnych od $k$ węzłów, to wszystkie poza $f[x_0, x_1, \dots, x_k]$ stają się dla nas zbędne. Dzięki tej obserwacji algorytm można wykonać na jednej tablicy $n+1$ - elementowej.
+\\ \\ Algorytm działa iteracyjnie, gdzie w każdym kroku oblicza kolejne ilorazy różnicowe. Dla każdego poziomu, róż-
+nice są obliczane od końca wektora \texttt{c}, co umożliwia bezpośrednią modyfikację danych. Na początku do tablicy zapisać wartości funkcji w węzłach interpolacji, ponieważ $f[x_i] = f(x_i)$. Następnie elementy, które nie są już potrzebne w kolejnych iteracjach, nadpisywane są nowymi wynikami, a wynikowe ilorazy różnicowe są tworzone w miejscu, co redukuje wymagania pamięciowe.
+\\
+\\ Metoda ma złożoność obliczeniową $O(n^2)$ (dla każdego rzędu $k$ wykonujemy $n - k$ obliczeń) i złożoność pamięciową $O(n)$ (tablica jednowymiarowa). 
+\\ 
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+\begin{algorithm}[H]
+\SetAlgoLined
+\KwIn{$\overline{x}$ -- wektor węzłów, $\overline{f}$ -- wektor wartości funkcji w punktach z $\overline{x}$}
+\KwOut{$\overline{c}$ -- wektor ilorazów różnicowych $f[x_0, ..., x_i]$}
+$\overline{c} \gets \overline{f}$;
+
+\For{$j$ \textbf{from} $1$ \textbf{to} $n$}{
+    \For{$i$ \textbf{from} $n$ \textbf{down to} $j$}{
+        $c_i \gets \frac{c_i - c_{i-1}}{x_i - x_{i-j}}$\;
+    }
+}
+
+\Return{$\overline{c}$}
+\caption{Funkcja obliczająca ilorazy różnicowe}
+\end{algorithm}
+\subsection{Testy}
+Wszystkie przeprowadzone testy przechodzą, zatem implementacja jest poprawna.
+
+\section{Wartość wielomianu interpolacyjny w punkcie- algorytm Hornera}
+\subsection{Opis problemu}
+Problemem zadania jest napisanie funkcji obliczającej wartość wielomianu interpolacyjnego stopnia $n$ w postaci Newtona $N_n(x)$ w punkcie $x = t$ za pomocą uogólnionego algorytmu Hornera, w czasie $O(n)$. \\ \\
+\texttt{function warNewton (x::Vector\{Float64\}, fx::Vector\{Float64\}, t::Float64)}
+\\ \textbf{Dane:}
+\begin{itemize}[label={}]
+    \item \texttt{x} - wektor długości $n+1$ zawierający węzły $x_0, \dots, x_n$ 
+        \begin{itemize}[label={}]
+            \item \texttt{x[1]} = $x_0$, ..., \texttt{x[n+1]} = $x_n$
+        \end{itemize}
+    \item \texttt{fx} - wektor długości $n+1$ zawierający ilorazy różnicowe
+        \begin{itemize}[label={}]
+            \item \texttt{fx[1]} = $f[x_0]$
+            \item \texttt{fx[2]} = $f[x_0, x_1]$, ..., \texttt{fx[n]} = $f[x_0, \dots, x_{n-1}]$,  \texttt{fx[n+1]} = $f[x_0, \dots, x_n]$
+        \end{itemize}
+    \item \texttt{t} - punkt, w którym należy obliczyć wartość wielomianu
+\end{itemize}
+\textbf{Wyniki:}
+\begin{itemize}[label={}]
+    \item \texttt{nt} - wartość wielomianu w punkcie $t$
+\end{itemize}
+\subsection{Rozwiązanie}
+Rozwiązanie tego problemu polega na zaimplementowaniu algorytmu, który oblicza wartości wielomianu interpolacyjnego stopnia $n$ w postaci Newtona w zadanym punkcie $t$ w czasie $O(n)$. Licząc w sposób bezpośrednio ze wzoru \[
+p_n(x) = \sum_{i=0}^n c_i \, q_i(x),
+\]
+uzyskamy złożoność $O(n^2)$. \\ \\ Przekształcając wielomian na postać rekurencyjną, wykonujemy:
+\[p_n(x) = \sum_{k=0}^n c_k\cdot q_k(x) = f[x_0] + \sum_{k=1}^n f[x_0, \dots, x_k](x-x_0)\dots (x-x_k) =\]
+\[= f[x_0] + (x-x_0)(f[x_0, x_1] + \sum_{k=2}^n f[x_0, \dots, x_k](x-x_1)\dots (x-x_k)) = \]
+\[\vdots\]
+\[= f[x_0] + (x-x_0)(f[x_0, x_1] + (x-x_1)(\dots (f[x_0, \dots, x_{n-1}]+(x-x_{n-1})f[x_0, \dots, x_n])\dots))\].
+Rekurencyjnie otrzymujemy: 
+\[w_n(x) = f[x0, \dots, x_n]\]
+\[w_k(x) = f[x_0, \dots, x_k] + (x-x_k)w_{k+1}\text{, gdzie } k \in \{0, \dots, n-1\}\].
+Wówczas:
+\[p_n(x) = w_0(x)\]
+.
+\\ 
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+\begin{algorithm}[H]
+\SetAlgoLined
+\KwIn{$\overline{x}$ -- wektor punktów, $\overline{c}$ -- wektor ilorazów różnicowych, $t$ -- punkt, dla którego szukamy wartości wielomianu}
+\KwOut{$nt$ -- wartość wielomianu w punkcie $t$}
+$nt \gets c_n$;
+
+\For{$i$ \textbf{from} $n-1$ \textbf{down to} 0}{
+    $nt \gets c_i + (t-x_i)\cdot nt$\;
+}
+
+\Return{$nt$}
+\caption{Funkcja obliczająca wartość wielomianu interpolacyjnego w danym punkcie}
+\end{algorithm}
+\subsection{Testy}
+Wszystkie przeprowadzone testy przechodzą, zatem implementacja jest poprawna.
+
+\section{Obliczanie współczynników postaci naturalnej wielomianu interpolacyjnego}
+\subsection{Opis problemu}
+Problemem zadania jest, znając współczynniki wielomianu interpolacyjnego w postaci Newtona $c_0 = f[x_0], c_1 = f[x_0, x_1], \dots, c_n = f[x_0, x_1, \dots, x_n]$ (ilorazy różnicowe) oraz węzły $x_0, x_1, \dots, x_n$ napisać funkcję obliczającą, w czasie $O(n^2)$ współczynniki jego postaci naturalnej $a_0, a_1, \dots, a_n$ tzn. $a_nx^n + a_{n-1}x^{n-1} + \dots + a_1x + a_0$.
+\\ \\ \texttt{function naturalna (x::Vector\{Float64\}, fx::Vector\{Float64\}}
+\\ \textbf{Dane:}
+\begin{itemize}[label={}]
+    \item \texttt{x} - wektor długości $n+1$ zawierający węzły $x_0, \dots, x_n$ 
+        \begin{itemize}[label={}]
+            \item \texttt{x[1]} = $x_0$, ..., \texttt{x[n+1]} = $x_n$
+        \end{itemize}
+    \item \texttt{f} - wektor długości $n+1$ zawierający ilorazy różnicowe
+        \begin{itemize}[label={}]
+            \item \texttt{fx[1]} = $f[x_0]$
+            \item \texttt{fx[2]} = $f[x_0, x_1]$, ..., \texttt{fx[n]} = $f[x_0, \dots, x_{n-1}]$, \texttt{fx[n+1]} = $f[x_0, \dots, x_n]$
+        \end{itemize}
+\end{itemize}
+\textbf{Wyniki:}
+\begin{itemize}[label={}]
+    \item \texttt{a} - wektor długości $n+1$ zawierający obliczone współczynniki postaci natrualnej
+    \begin{itemize}[label={}]
+        \item \texttt{a[1]} = $a_0$
+        \item \texttt{a[2]} = $a_1$, ..., \texttt{a[n]} = $a_{n-1}$, \texttt{a[n+1]} = $a_n$
+    \end{itemize}
+\end{itemize}
+\subsection{Rozwiązanie}
+Rozwiązaniem problemu jest zaimplementowanie algorytmu sprowadzającego wielomian w postaci Newtona:
+\[\sum_{k=0}^n c_k \prod_{j=0}^{k-1} (x-x_j),\]
+do wielomianu w postaci naturalnej:
+\[\sum_{i=0}^n a_ix^i\]
+w czasie $O(n^2)$. W ten sposób otrzymamy współczynniki $a_i$ każdej kolejnej potęgi $x^i$.
+\\ \\ Algorytm przechodzi przez dwie pętle (złożoność obliczeniowa $O(n^2)$) zaczynając od $w_n(x)$ i obliczając kolejne wartości częściowe tak jak w algorytmie Hornera, tylko zapisując je w postaci naturalnej. Wówczas obliczone już wartości można użyć do obliczania wartości kolejnych współczynników. Użyta jest tutaj rekurencja z poprzedniego zadania.
+\[w_n = c_n \]
+Przy $x^n$ współczynnik będzie wynosił $c_n$.
+\[w_{n-1} = c_{n-1} + (x-x_{n-1})w_n = c_{n-1} + (x-x_{n-1})c_n = c_{n-1} + c_nx - c_nx_{n-1}\] 
+Przy $x^{n-1}$ współczynnik będzie wynosił $c_{n-1} - x_{n-1}c_n$.
+.
+\\ \\ 
+\begin{algorithm}[H]
+\SetAlgoLined
+\KwIn{$\overline{x}$ -- wektor punktów, $\overline{c}$ -- wektor ilorazów różnicowych}
+\KwOut{$\overline{a}$ -- wektor współczynników postaci naturalnej wielomianu interpolacyjnego}
+$a_n \gets c_n$;
+
+\For{$i$ \textbf{from} $n-1$ \textbf{down to} 0}{
+    $a_i \gets c_i - x_i \cdot a_{i+1}$\;
+    \For{$j$ \textbf{from} $i+1$ \textbf{to} $n-1$}{
+        $a_j \gets a_j - x_i\cdot a_{j+1}$\;
+    }
+}
+
+\Return{$\overline{a}$}
+\caption{Funkcja obliczająca współczynniki postaci naturalnej wielomianu interpolacyjnego}
+\end{algorithm}
+\subsection{Testy}
+Wszystkie przeprowadzone testy przechodzą, zatem implementacja jest poprawna.
+
+\section{Graficzne przedstawienie wielomianu interpolacyjnego
+i interpolowanej funkcji}
+\subsection{Opis problemu}
+Problemem zadania jest napisanie funkcji, która zinterpoluje zadaną funkcję $f(x)$ w przedziale $[a, b]$ za pomocą wielomianu interpolacyjnego stopnia $n$ w postaci Newtona. Następnie narysuje wielomian interpolacyjny i interpolowaną funkcję. Do rysowania użyty został pakiet Plots. W interpolacji należało użyć węzłów równoodległych, tj. $x_k = a + kh, h = (b − a)/n, k = 0, 1, ... , n$.
+\\ \\ \texttt{function rysujNnfx (f, a::Float64, b::Float64, n::Int}
+\\ \textbf{Dane:}
+\begin{itemize}[label={}]
+    \item \texttt{f} - funkcja $f(x)$ zadana jako anonimowa funkcja,
+    \item \texttt{a, b} - przedział interpolacji,
+    \item \texttt{n} - stopień wielomianu interpolacyjnego.
+    \end{itemize}
+
+\\ \textbf{Wyniki:}
+\begin{itemize}[label={}]
+    \item - funkcja rysuje wielomian interpolacyjny i interpolowaną funkcję w przedziale $[a, b]$
+    \end{itemize}
+\subsection{Rozwiązanie}
+Rozwiązaniem problemu jest połączenie zaimplementowanych wcześniej metod w jedną, umożliwiającą graficzne porównanie otrzymanego wielomianu interpolacyjnego z dokładną funkcją.
+\begin{algorithm}[H]
+\caption{Funkcja przedstawiająca graficznie wykresy funkcji interpolowanej i wielomianu interpolującego}
+\SetAlgoLined
+\KwIn{$f$ -- funkcja, którą chcemy interpolować, $a, b$ -- końce przedziału interpolacji, $n$ -- stopień wielomianu interpolacyjnego}
+\KwOut{wykres wielomianu interpolującego i funkcji interpolowanej}
+\begin{algorithmic}[1]
+\State Wyznacz \( n+1 \) równoodległych punktów \( x \), gdzie \( x_i = a + i \cdot \frac{b-a}{n}, \, i = 0, \dots, n \)
+\State Oblicz wartości funkcji w tych punktach: \( fx[i] = f(x_i) \)
+\State Oblicz ilorazy różnicowe: \(\overline{c} \gets \texttt{ilorazyRoznicowe}(\overline{x}, \overline{y})  \)
+\State Stwórz gęstą siatkę punktów \( \text{xs} \) w przedziale \([a, b]\), np. \( \text{length(xs)} = 1000 \)
+\State Oblicz:
+\begin{itemize}
+    \item \( y_{\text{original}} \gets [f(t) \text{ dla } t \in \text{xs}] \)
+    \item \( y_{\text{interpolated}} \gets [\texttt{warNewton}(x, c, t) \text{ dla } t \in \text{xs}] \)
+\end{itemize}
+\State Utwórz wykres:
+\begin{itemize}
+    \item niebieska linia jako funkcja oryginalna: \( (\text{xs}, y_{\text{original}}) \)
+    \item czerwona linia jako wielomian interpolacyjny: \( (\text{xs}, y_{\text{interpolated}}) \)
+\end{itemize}
+\State Zapisz wykres do pliku: \texttt{savefig(filename)}
+\end{algorithmic}
+\end{algorithm}
+\subsection{Testy}
+Wszystkie przeprowadzone testy przechodzą, zatem implementacja jest poprawna.
+
+\section{Analiza wykresów funkcji i wielomianu interpolacyjnego}
+\subsection{Opis problemu}
+Problemem zadania jest przetestowanie funkcji \texttt{rysujNnfx(f, a, b, n)} na nastepujących przykładach:
+\begin{enumerate}
+    \item $e^x, [0, 1], n \in \{5, 10, 15\}$
+    \item $x^2\text{sin}x, [-1, 1], n \in \{5, 10, 15\}$
+\end{enumerate}
+\subsection{Rozwiązanie}
+Rozwiązaniem problemu jest użycie metody \texttt{rysujNnfx(f, a, b, n)} dla odpowiednich danych. Wykresy wygenerowane przez program są umieszczone poniżej.
+
+\subsection{Wyniki i ich interpretacja}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{1_n5.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 5$ i funkcji interpolowanej $f(x) = e^x$ na przedziale $[0, 1]$.}
+    \label{fig:zad5_f1_10}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{1_n10.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 10$ i funkcji interpolowanej $f(x) = e^x$ na przedziale $[0, 1]$.}
+    \label{fig:zad5_f1_10}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{1_n15.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 15$ i funkcji interpolowanej $f(x) = e^x$ na przedziale $[0, 1]$.}
+    \label{fig:zad5_f1_15}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{2_n5.png}.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 5$ i funkcji interpolowanej $f(x) = x^2\text{sin}x$ na przedziale $[-1, 1]$.}
+    \label{fig:zad5_f2_5}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{2_n10.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 10$ i funkcji interpolowanej $f(x) = x^2\text{sin}x$ na przedziale $[-1, 1]$.}
+    \label{fig:zad5_f2_10}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{2_n15.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 15$ i funkcji interpolowanej $f(x) = x^2\text{sin}x$ na przedziale $[-1, 1]$.}
+    \label{fig:zad5_f2_15}
+\end{figure}
+
+Na wszystkich wykresach funkcja oryginalna pokrywa się z wielomianem interpolacyjnym, niezależnie od stopnia wielomianu.
+\subsection{Wnioski}
+Dla funkcji $f(x) = e^x$ i $f(x) = x^2sinx$ interpolacja wielomianem sprawdza się bardzo dobrze. Nawet dla wielomianów niskiego stopnia nie ma widocznych różnic. Funkcje te są łatwo interpolowane, a algorytm działa poprawnie.
+\section{Analiza wykresów funkcji i wielomianu interpolacyjnego}
+\subsection{Opis problemu}
+Problemem zadania jest przetestowanie funkcji  \texttt{rysujNnfx(f, a, b, n)} na nastepujących przykładach:
+\begin{enumerate}
+    \item $|x|, [-1, 1], n \in \{5, 10, 15\}$
+    \item $\frac{1}{1 + x^2}, [-5, 5], n \in \{5, 10, 15\}$
+\end{enumerate}
+\subsection{Rozwiązanie}
+Rozwiązaniem problemu jest użycie metody \texttt{rysujNnfx(f, a, b, n)} dla odpowiednich danych. Wykresy wygenerowane przez program są umieszczone poniżej.
+\subsection{Wyniki i ich interpretacja}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{3_n5.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 5$ i funkcji interpolowanej $f(x) = |x|$ na przedziale $[-1, 1]$.}
+    \label{fig:zad6_f1_5}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{3_n10.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 10$ i funkcji interpolowanej $f(x) = |x|$ na przedziale $[-1, 1]$.}
+    \label{fig:zad6_f1_10}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{3_n15.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 15$ i funkcji interpolowanej $f(x) = |x|$ na przedziale $[-1, 1]$.}
+    \label{fig:zad6_f1_15}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{4_n5.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 5$ i funkcji interpolowanej $f(x) = \frac{1}{1 + x^2}$ na przedziale $[-5, 5]$.}
+    \label{fig:zad6_f2_5}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{4_n10.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 10$ i funkcji interpolowanej $f(x) = \frac{1}{1 + x^2}$ na przedziale $[-5, 5]$.}
+    \label{fig:zad6_f2_10}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{4_n15.png}
+    \caption{Wykres wielomianu interpolacyjnego stopnia $\leq 15$ i funkcji interpolowanej $f(x) = \frac{1}{1 + x^2}$ na przedziale $[-5, 5]$.}
+    \label{fig:zad6_f2_15}
+\end{figure}
+Interpolacja wielomianowa w przypadku funkcji  \( |x| \) oraz \( \frac{1}{1+x^2} \) nie daje zadowalających wyników. Nie poprawia ich nawet zwiększenie stopnia wielomianu.
+\\ \\ Dla funkcji \( |x| \) spowodowane jest to tym, że nie jest ona różniczkowalna w punkcie \( x=0 \). Wielomiany, jako funkcje ciągłe i gładkie, mają ograniczone możliwości przybliżenia funkcji o charakterystycznym, ostrym wierzchołku, takim jak w \( |x| \).  
+\\ \\ Natomiast dla funkcji \( \frac{1}{1+x^2} \), interpolacja wielomianowa prowadzi do coraz większych odchyleń od rzeczywistego przebiegu funkcji w okolicach końców przedziału. To zjawisko, znane jako efekt Runge'go, szczególnie wyraźnie występuje przy stosowaniu równoodległych węzłów, jak w tym przypadku. Rozwiązaniem mogłoby być użycie węzłów rozmieszczonych gęściej w obszarach sprawiających problemy lub zastosowanie węzłów opartych na zerach wielomianów Czebyszewa.  
+ 
+\subsection{Wnioski}
+Interpolacja wielomianowa to użyteczna metoda do przybliżania funkcji, zwłaszcza gdy dysponujemy tylko kilkoma jej wartościami. Jednak ma swoje ograniczenia. Jeśli funkcja nie jest różniczkowalna, choćby na małych odcinkach, wyniki interpolacji mogą być dalekie od rzeczywistości. Nawet dla funkcji ciągłych i gładkich zwiększanie stopnia wielomianu nie zawsze daje lepsze rezultaty – czasami wręcz pogarsza dokładność. 
+\\ \\ Dlatego nie należy ślepo ufać wynikom interpolacji. Warto stosować różne podziały przedziału na węzły, zwłaszcza w miejscach, gdzie mogą pojawić się problemy. Pomocna jest analiza samego kształtu funkcji, aby zidentyfikować potencjalne trudności. Jeśli to możliwe, warto porównać wyniki interpolacji z dokładnym wykresem funkcji – dzięki temu łatwiej ocenić skuteczność metody.
+\end{document}

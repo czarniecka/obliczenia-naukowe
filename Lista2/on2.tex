@@ -1,0 +1,621 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}   
+\usepackage[polish.sty]{babel}   
+\usepackage[a4paper, top=4.5cm, bottom=3.5cm, left=1.5cm, right=1.5cm]{geometry} 
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsfonts}
+\usepackage[figurename=Rysunek,tablename=Tabela]{caption}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{float}
+
+
+
+
+    \title{\textbf{Obliczenia naukowe \\ \large Lista 2}}
+    \author{Aleksandra Czarniecka (272385)}
+    \date{listopad 2024}
+ 
+    \addtolength{\topmargin}{-3cm}
+    \addtolength{\textheight}{3cm}
+\begin{document}
+
+\maketitle
+
+\section{Analiza wpływu na wynik niewielkiej zmiany danych wejściowych: \\Obliczanie iloczynu skalarnego dwóch wektorów}
+\subsection{Opis problemu}
+Problemem zadania jest przeanalizowanie jak niewielka zmiana danych wejściowych wpływa na otrzymane wyniki. W tym celu należało powtórzyć zadanie 5 z listy 1, ale w wektorze x w $x_4$ i $x_5$ usunąć ostatnią cyfrę (tj. 9 i 7). 
+\\ Zadanie 5 z listy 1 polegało na eksperymentalnym obliczeniu iloczynu skalarnego dwóch wektorów: 
+\[
+x = [2.718281828, -3.141592654, 1.414213562, 0.5772156649, 0.3010299957]
+\]
+\[
+y = [1486.2497, 878366.9879, -22.37492, 4773714.647, 0.000185049].
+\]
+za pomocą 4 różnych algorytmów używając pojedynczej i podwójnej precyzji (typy Float32 i Float64 w języku Julia).
+\\
+Prawidłowa wartość wynosi (dokładność do 15 cyfr) $-1.00657107000000 \cdot 2.0^{-52}$.
+
+\subsection{Rozwiązanie}
+Rozwiązanie polega na przeanalizowaniu wyników dla wektorów po niewielkiej zmianie:
+\[
+x = [2.718281828, -3.141592654, 1.414213562, 0.577215664, 0.301029995]
+\]
+\[
+y = [1486.2497, 878366.9879, -22.37492, 4773714.647, 0.000185049].
+\]
+Prawidłowa wartość, w tym przypadku wynosi $-1.00657107 \cdot 10^{-11} - 9 \cdot 10^{-10} \cdot 4773714.647 - 7 \cdot 10^{-10} \cdot 0.000185049 = - 0.004296343192495245$. 
+
+\subsection{Wyniki oraz ich interpretacja}\
+W celu analizy wyników przedstawione zostaną najpierw wyniki z zadania 5 z listy 1.
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+	Typ  & "w przód" & "w tył" & od najw. do najmn. & od najmn. do najw.\\
+\hline
+	Float32 & -0.4999443 & -0.4543457 & -0.5 & -0.5\\
+\hline
+	Float64 & 1.0251881368296672e-10 & -1.5643308870494366e-10 & 0.0 & 0.0\\
+\hline
+
+\end{tabular}
+\caption{Wyniki iloczynu skalarnego wektorów z zadania 5 z listy 1.}
+\end{table}
+
+Po zmianie danych wejściowych wyniki przedstawiają się następująco.
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+	Typ  & "w przód" & "w tył" & od najw. do najmn. & od najmn. do najw.\\
+\hline
+	Float32 & -0.4999443 & -0.4543457 & -0.5 & -0.5\\
+\hline
+	Float64 & -0.00429634273 & -0.00429634299 & -0.00429634284 & -0.00429634284\\
+\hline
+\end{tabular}
+\caption{Wyniki iloczynu skalarnego wektorów po niewielkiej zmianie.}
+\end{table}
+
+Można zauważyć, że wyniki dla typu Float32 są jednakowe, natomiast dla Float64 znacząco się różnią. 
+W tym przypadku (Float64) wyniki po zmianie są zdecydowanie dokładniejsze niż te z Tabeli 1, i jednocześnie wszystkie bardzo zbliżone do prawidłowego wyniku.
+
+
+\subsection{Wnioski}
+Ta niewielka zmiana nie wpłynęła na wyniki w arytmetyce Float32, ponieważ usuwane cyfry z liczb znajdowały się na granicy precyzji, były to najmniej znaczace cyfry. W dalszym ciągu wyniki obliczeń obarczone są dużym błędem, ze względu na działania na liczbach o różniących się rzędach wielkości. 
+Natomiast w arytmetyce Float64 dzięki jej większej precyzji błąd zdecydowanie zmalał. Można z tego wywnioskować, że zadanie jest źle uwarunkowane, to znaczy, że nawet najmniejszy wpływ na dane wejściowe może mieć kolosalne znaczenie w wyniku. 
+
+\section{Porównanie wykresu funkcji z jej obliczoną granicą}
+
+\subsection{Opis problemu}
+Problemem zadania jest analiza wykresów funkcji $f(x) = e^xln(1 + e^{-x})$ narysowanych w różnych programach do wizualizacji i porównanie ich z obliczoną granicą $\lim_{x \to \infty} f(x)$.
+\subsection{Rozwiązanie}
+Do narysowania wykresu funkcji $f(x) = e^xln(1 + e^{-x})$ użyte zostały dwa programy do wizualizacji, tj. Desmos i Wolfram Alpha. 
+\\ \\Obliczenie granicy funkcji w nieskończoności:
+\\
+$
+\\
+\lim_{x \to \infty} f(x) = \lim_{x \to \infty} e^x \ln(1 + e^{-x}) 
+= \lim_{x \to \infty} \frac{\ln(1 + e^{-x})}{e^{-x}} 
+=_{\text{Hospital}} = \lim_{x \to \infty} {-\frac{1}{e^x + 1} \cdot} \frac {1}{-e^{-x}} 
+= \lim_{x \to \infty} \frac{e^x}{e^x + 1} =
+\\
+= \lim_{x \to \infty} \frac{e^x + 1 - 1}{e^x + 1} 
+= \lim_{x \to \infty} \left(1 - \frac{1}{e^x + 1}\right) = 1
+$
+\\ \\
+Zatem oczekiwane jest, aby funkcja w nieskończoności zbiegała do wartości 1.
+\subsection{Wyniki oraz ich interpretacja}
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/desmos.png}
+        \caption{\\Wykres funkcji otrzymany za pomocą Desmos.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/wolfram.png}
+        \caption{\\Wykres funkcji otrzymany za pomocą Wolfram Alpha.}
+    \end{minipage}
+\end{figure}
+
+Z wykresów widać, że już dla x > 30 zaczyna się dziać coś dziwnego, funkcja zachowuje się nieprawidłowo. Najpierw widoczne są oscylacje, aż w końcu funkcja przyjmuje wartość 0, co nie pokrywa się z obliczoną granicą.
+\subsection{Wnioski}
+Wzór funkcji $f(x) = e^xln(1 + e^{-x})$ zapisany w takiej formie sprawia, że dla odpowiednio dużego argumentu funkcji czynnik $e^x$ staje się bardzo duży, natomiast czynnik $ln(1 + e^{-x})$ wprost przeciwnie- staje się bardzo mały. Z tego powodu zaczynają pojawiać się oscylacje, ponieważ mnożenie liczb o tak różnym rzędzie generuje duży błąd. Dodatkowo ze względu arytmetykę stosowaną w użytych programach do wizualizacji od pewnego momentu $ln(1 + e^{-x}) \approx 0$, dlatego funkcja się zeruje. Problem jest źle uwarunkowany, a programy do wizualizacji niedokładne przez precyzję arytmetyki.
+\section{Rozwiązywanie układu równań liniowych $Ax=b$}
+
+\subsection{Opis problemu}
+Problemem zadania jest porównanie dwóch metod rozwiązywania układów liniowych $Ax = b$. W tym celu eksperymenty zostały przeprowadzone na następujących macierzach A:
+\begin{itemize}
+    \item $A = H^n$, gdzie $H^n$ jest macierzą Hilberta z rosnącym stopniem $n > 1$;
+    \item $A = R^n$, gdzie $R^n$ jest losową macierzą stopnia $n \in \{5, 10, 20\}$, o współczynniku uwarunkowania \\$c \in \{1, 10, 10^3, 10^7, 10^{12}, 10^{16}\}$.
+\end{itemize}
+Układy równań będą rozwiązywane za pomocą następujących metod:
+\begin{itemize}
+    \item metody eliminacji Gaussa, tj. $x = A\textbackslash
+b$;
+    \item metody inwersji (z macierzą odwrotną), tj. $x = A^{-1}b$.
+\end{itemize}
+Rozwiązanie dokładne to $x = \{1, ..., 1\}^T$. Na jego podstawie należy obliczyć błąd względny wyników powyższych metod.
+\subsection{Rozwiązanie}
+Rozwiązanie polega na implementacji problemu w języku Julia. Do wygenerowania macierzy Hilberta użyto funkcji hilb(n) załączonej do zadania w pliku hilb.jl, natomiast do macierzy losowej użyto funkcji matcond(n, c) z pliku matcond.jl. Zaimplementowano funkcję do rozwiązywania układu równań Ax = b, gdzie prawdziwym rozwiązaniem jest wektor jedynek. Funkcja ta wyznacza $b = A \cdot \{1, ..., 1\}^T$, a następnie oblicza $x$ metodą Gaussa i metodą inwersji. Na koniec obliczany jest błąd względny i drukowane są otrzymane wyniki. Użyte zostają tam takie funkcje wbudowane jak: cond(A) (wskaźnik uwarunkowania macierzy) i rank(A) (rząd macierzy) z pakietu LinearAlgebra.
+\subsection{Wyniki oraz ich interpretacja}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+	n & cond(A) & rank(A) & błąd metody Gaussa & błąd metody inwersji\\
+\hline
+	1 & 1.000000e+00 & 1 & 0.000000e+00 & 0.000000e+00\\
+\hline
+	2 & 1.928147e+01 & 2 & 5.661049e-16 & 1.404333e-15\\
+\hline
+	3 & 5.240568e+02 & 3 & 8.022594e-15 & 0.000000e+00\\
+\hline
+	4 & 1.551374e+04 & 4 & 4.137410e-14 & 0.000000e+00\\
+\hline
+	5 & 4.766073e+05 & 5 & 1.682843e-12 & 3.354436e-12\\
+\hline
+	6 &         1.495106e+07 &    6 &         2.618913e-10 &    2.016376e-10\\
+\hline
+	 7 &         4.753674e+08 &    7 &         1.260687e-08 &    4.713280e-09\\
+\hline
+	8 &         1.525758e+10 &    8 &         6.124090e-08 &    3.077484e-07\\
+\hline
+	9 &         4.931538e+11 &    9 &         3.875163e-06 &    4.541268e-06\\
+\hline
+	10 &         1.602442e+13 &   10 &         8.670390e-05 &    2.501493e-04\\
+\hline
+	11 &         5.222701e+14 &   10 &         1.582781e-04 &    7.618304e-03\\
+\hline
+	12 &         1.751595e+16 &   11 &         1.339621e-01 &    2.589941e-01\\
+\hline
+	13 &         3.188395e+18 &   11 &         1.103970e-01 &    5.331276e+00\\
+\hline
+
+\end{tabular}
+\caption{Porównanie wyników dla macierzy Hilberta (dla n > 13 precyzja Float64 jest niewystarczająca).}
+\end{table}
+Wskaźnik uwarunkowania macierzy dla macierzy Hilberta rośnie szybko, jest spory nawet dla małych wartości n. Obie metody obliczania rozwiązania generują duże błędy względne, które są podobnych rzędów.
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+	c & n & rank(A) & błąd metody Gaussa & błąd metody inwersji\\
+\hline
+	 & 5 & 5 & 1.790181e-16 &    1.719950e-16\\
+
+	1 & 10 &  10 &         1.755417e-16 &    2.482534e-16\\
+ & 20 &  20 &         4.227603e-16 &    5.165819e-16 \\
+\hline
+	& 5 & 5 & 1.719950e-16 & 1.489520e-16\\
+
+	10 & 10 & 10 &         3.349122e-16 &    2.719480e-16 \\
+& 20 & 20 &         3.376612e-16 &    3.475548e-16 \\
+\hline
+	 & 5 & 5 & 1.719950e-16 &    1.489520e-16\\
+
+	$10^3$ & 10 & 10 &         2.984828e-15 &    5.055600e-15 \\
+& 20 &  20 &         2.322274e-14 &    2.478877e-14 \\
+\hline
+ 	& 5 &  5 &         9.668178e-11 &    9.955042e-11\\
+
+	$10^7$ & 10 & 10 &         1.908004e-10 &    2.438477e-10 \\
+& 20 & 20 &         9.043490e-11 &    1.129620e-10 \\
+\hline
+	&  5 &    5 &         3.368904e-05 &    3.936900e-05\\
+
+	$10^{12}$ & 10 &  10 &         3.217732e-16 &    1.651812e-06 \\
+& 20 &   20 &         1.845942e-06 &    4.212324e-06  \\
+\hline
+	& 5 &   4 &         4.545471e-02 &    5.517881e-02\\
+
+	$10^{16}$ & 10 &    9 &         2.268347e-01 &    2.293870e-01 \\
+
+	&  20 &   19 &         2.388129e-01 &    2.254282e-01\\
+\hline
+
+\end{tabular}
+\caption{Porównanie wyników dla macierzy losowej.}
+\end{table}
+Błędy względne dla macierzy losowej także są spore w obu metodach. Zależą jednak bardziej od współczynnika uwarunkowania, niż od rozmiaru macierzy. Dla różnych wielkości macierzy, ale tych samych uwarunkowaniach, rzędy błędów są zbliżone. 
+\subsection{Wnioski}
+Czym wyższa wartość wskaźnika uwarunkowania macierzy A, tym rozwiązanie równania jest obarczone większym błędem. Zadanie staje się źle uwarunkowane dla dużych wartości wskaźnika uwarunkowania. Obie metody w obu przypadkach generują zbliżone błędy, dlatego nie można ocenić, która jest lepsza.
+\section{Wielomiany i eksperyment Wilkinsona}
+
+\subsection{Opis problemu}
+Problemem zadania jest złośliwy wielomian Wilkinsona $P(x) = \prod_{k=1}^{n} (x - k)$, który można zapisać w postaci:
+\begin{itemize}
+    \item iloczynowej, tj. $P(x) = (x - 1)(x - 2)(x - 3)(x - 4)(x - 5)(x - 6)(x - 7)(x - 8)(x - 9)(x - 10)(x - 11)(x - 12)(x - 13)(x - 14)(x - 15)(x - 16)(x - 17)(x - 18)(x - 19)(x - 20)$;
+    \item normalnej, tj. $P(x) = x^{20} - 210x^{19} + 20615x^{18} - 1256850x^{17} + 53327946x^{16} - 1672280820x^{15} + 40171771630x^{14} - 756111184500x^{13} + 11310276995381x^{12} - 135585182899530x^{11} + 1307535010540395x^{10} - 10142299865511450x^{9} + 63030812099294896x^{8} - 311333643161390640x^{7} + 1206647803780373360x^{6} - 3599979517947607200x^{5} + 8037811822645051776x^{4} - 12870931245150988800x^{3} + 13803759753640704000x^{2} - 8752948036761600000x + 2432902008176640000$.
+\end{itemize}
+Celem jest wyznaczenie w Julii pierwiastków $z_k$, gdzie $k \in [1, 20]$. Następnie sprawdzenie ich przez policzenie $|P(z_k)|, |p(z_k)| i |z_k - k|$ oraz wyjaśnienie rozbieżności. 
+\\ \\Kolejno należy powtórzyć eksperyment Wilkinsona, tj. zmienić współczynnik $-220$ na $-210-2^{-23}$.
+\subsection{Rozwiązanie}
+Rozwiązanie opiera się na użyciu pakietu Polynomials języka Julia. Należy zapisać wielomian Wilkinsona w postaci naturalnej oraz iloczynowej (za pomocą wbudowanej funkcji fromroots()). Następnie z użyciem funkcji roots() obliczono pierwiastki $z_k$ tego wielomianu z jego postaci normalnej. Po tym, wyznaczono błąd bezwzględny pierwiastków i wyników wielomianu dla nich. Na koniec powtórzono ekperyment przy zmianie współczynnika $-210$ na $-210 - 2^{-23} $. 
+\subsection{Wyniki oraz ich interpretacja}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+k & $|P(k)|$ & $|p(k)|$ \\
+\hline
+1 & 0.0 & 0 \\
+\hline
+2 & 8192.0 & 0 \\
+\hline
+3 & 27648.0 & 0 \\
+\hline
+4 & 622592.0 & 0 \\
+\hline
+5 & 2.176e6 & 0 \\
+\hline
+6 & 8.84736e6 & 0 \\
+\hline
+7 & 2.4410624e7 & 0 \\
+\hline
+8 & 5.89824e7 & 0 \\
+\hline
+9 & 1.45753344e8 & 0 \\
+\hline
+10 & 2.27328e8 & 0 \\
+\hline
+11 & 4.79074816e8 & 0 \\
+\hline
+12 & 8.75003904e8 & 0 \\
+\hline
+13 & 1.483133184e9 & 0 \\
+\hline
+14 & 2.457219072e9 & 0 \\
+\hline
+15 & 3.905712e9 & 0 \\
+\hline
+16 & 6.029312e9 & 0 \\
+\hline
+17 & 9.116641408e9 & 0 \\
+\hline
+18 & 1.333988352e10 & 0 \\
+\hline
+19 & 1.9213101568e10 & 0 \\
+\hline
+20 & 2.7193344e10 & 0 \\
+\hline
+\end{tabular}
+\caption{Wyniki wielomianu Wilkinsona w postaci normalnej (P(k)) i iloczynowej (p(k)) dla dokładnych wartości pierwiastków (wartość k).}
+\end{table}
+Dla dokładnych wartości pierwiastków wielomian w postaci iloczynowej jest równy zero dla każdego pierwiastka, natomiast w postaci normalnej wychodzą różne wyniki.
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+k & $z_k$ & $|P(z_k)|$ & $|p(z_k)|$ & $|z_k - k|$ \\
+\hline
+1 & 0.9999999999996989 & 35696.50964788257 & 5.518479490350445e6 & 3.0109248427834245e-13 \\
+\hline
+2 & 2.0000000000283182 & 176252.60026668405 & 7.37869762990174e19 & 2.8318236644508943e-11 \\
+\hline
+3 & 2.9999999995920965 & 279157.6968824087 & 3.3204139316875795e20 & 4.0790348876384996e-10 \\
+\hline
+4 & 3.9999999837375317 & 3.0271092988991085e6 & 8.854437035384718e20 & 1.626246826091915e-8 \\
+\hline
+5 & 5.000000665769791 & 2.2917473756567076e7 & 1.8446752056545688e21 & 6.657697912970661e-7 \\
+\hline
+6 & 5.999989245824773 & 1.2902417284205095e8 & 3.320394888870117e21 & 1.0754175226779239e-5 \\
+\hline
+7 & 7.000102002793008 & 4.805112754602064e8 & 5.423593016891273e21 & 0.00010200279300764947 \\
+\hline
+8 & 7.999355829607762 & 1.6379520218961136e9 & 8.262050140110275e21 & 0.0006441703922384079 \\
+\hline
+9 & 9.002915294362053 & 4.877071372550003e9 & 1.196559421646277e22 & 0.002915294362052734 \\
+\hline
+10 & 9.990413042481725 & 1.3638638195458128e10 & 1.655260133520688e22 & 0.009586957518274986 \\
+\hline
+11 & 11.025022932909318 & 3.585631295130865e10 & 2.24783329792479e22 & 0.025022932909317674 \\
+\hline
+12 & 11.953283253846857 & 7.533332360358197e10 & 2.886944688412679e22 & 0.04671674615314281 \\
+\hline
+13 & 13.07431403244734 & 1.9605988124330817e11 & 3.807325552826988e22 & 0.07431403244734014 \\
+\hline
+14 & 13.914755591802127 & 3.5751347823104315e11 & 4.612719853150334e22 & 0.08524440819787316 \\
+\hline
+15 & 15.075493799699476 & 8.21627123645597e11 & 5.901011420218566e22 & 0.07549379969947623 \\
+\hline
+16 & 15.946286716607972 & 1.5514978880494067e12 & 7.010874106897764e22 & 0.05371328339202819 \\
+\hline
+17 & 17.025427146237412 & 3.694735918486229e12 & 8.568905825736165e22 & 0.025427146237412046 \\
+\hline
+18 & 17.99092135271648 & 7.650109016515867e12 & 1.0144799361044434e23 & 0.009078647283519814 \\
+\hline
+19 & 19.00190981829944 & 1.1435273749721195e13 & 1.1990376202371257e23 & 0.0019098182994383706 \\
+\hline
+20 & 19.999809291236637 & 2.7924106393680727e13 & 1.4019117414318134e23 & 0.00019070876336257925 \\
+\hline
+\end{tabular}
+\caption{Porównania wartości dla wielomianu Wilkinsona (k- dokładna wartość pierwiastka, $z_k$- zwrócona wartość pierwiastka z funkcji roots(), $|P(z_k)|$- wartość bezwzględna wyniku wielomianu zapisanego w postaci normalnej, $|p(z_k)|$- wartość bezwzględna wyniku wielomianu zapisanego w postaci iloczynowej, $|z_k - k|$- błąd bezwzględny znalezionych pierwiastków).}
+\end{table}
+Wszystkie wartośći $z_k$ różnią się od dokładnych wartości pierwiastków wielomianu Wilkinsona (k). Można także zauważyć, że błędy bezwzględne zwiększają się wraz ze wzrostem wartości pierwiastka. Skutkują one dość niespodziewanymi wynikami wartości wielomianu zapisanego w postaci normalnej, jak i iloczynowej. Obie te wartości są od siebie różne i osiągają rzędy nawet $10^{13}$ i $10^{23}$.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+k & $z_k$ & $|P(z_k)|$ \\
+\hline
+1 & 0.9999999999998357 + 0.0im & 20259.872313418207 \\
+\hline
+2 & 2.0000000000550373 + 0.0im & 346541.4137593836 \\
+\hline
+3 & 2.99999999660342 + 0.0im & 2.2580597001197007e6 \\
+\hline
+4 & 4.000000089724362 + 0.0im & 1.0542631790395478e7 \\
+\hline
+5 & 4.99999857388791 + 0.0im & 3.757830916585153e7 \\
+\hline
+6 & 6.000020476673031 + 0.0im & 1.3140943325569446e8 \\
+\hline
+7 & 6.99960207042242 + 0.0im & 3.939355874647618e8 \\
+\hline
+8 & 8.007772029099446 + 0.0im & 1.184986961371896e9 \\
+\hline
+9 & 8.915816367932559 + 0.0im & 2.2255221233077707e9 \\
+\hline
+10 & 10.095455630535774 - 0.6449328236240688im & 1.0677921232930157e10 \\
+\hline
+11 & 10.095455630535774 + 0.6449328236240688im & 1.0677921232930157e10 \\
+\hline
+12 & 11.793890586174369 - 1.6524771364075785im & 3.1401962344429485e10 \\
+\hline
+13 & 11.793890586174369 + 1.6524771364075785im & 3.1401962344429485e10 \\
+\hline
+14 & 13.992406684487216 - 2.5188244257108443im & 2.157665405951858e11 \\
+\hline
+15 & 13.992406684487216 + 2.5188244257108443im & 2.157665405951858e11 \\
+\hline
+16 & 16.73074487979267 - 2.812624896721978im & 4.850110893921027e11 \\
+\hline
+17 & 16.73074487979267 + 2.812624896721978im & 4.850110893921027e11 \\
+\hline
+18 & 19.5024423688181 - 1.940331978642903im & 4.557199223869993e12 \\
+\hline
+19 & 19.5024423688181 + 1.940331978642903im & 4.557199223869993e12 \\
+\hline
+20 & 20.84691021519479 + 0.0im & 8.756386551865696e12 \\
+\hline
+\end{tabular}
+\caption{Porównania wartości dla wielomianu Wilkinsona po zmianie (k- dokładna wartość pierwiastka, $z_k$- zwrócona wartość pierwiastka z funkcji roots(), $|P(z_k)|$- wartość bezwzględna wyniku wielomianu zapisanego w postaci normalnej).}
+\end{table}
+Okazało się, że po zmianie jednego z wspołczynników wielomianu, jego obliczone pierwiastki zyskały część urojoną. Tutaj również wartości $|P(z_k)|$ są różne od zera.
+\subsection{Wnioski}
+Zadanie jest źle uwarunkowane. Już sam problem wyznaczania pierwiastków wielomianu Wilkinsona to pokazuje, gdyż małe niedokładności ich wartości generują ogromne zmiany w wartości wielomianu, rzędu nawet $10^{13}$ dla postaci normalnej i $10^{23}$ dla postaci iloczynowej. Widać to również przy powtórzeniu eksperymentu ze zmianą jednego ze współczynników. Niewielka zmiana skutkowała się pojawieniem części urojonej i w dalszym ciągu absolutnie niedokładymi wartościami wielomianu.
+\\  \\ Oprócz tego można wywnioskować, że przechowywanie wielomianu Wilkinsona w postaci naturalnej jest bardzo niedokładne, co widać w Tabeli 5, gdzie nawet dla dokładnych pierwiastków, wielomian się nie zeruje. Dzieje się tak przez to, że arytmetyka Float64 ma w systemie dziesiętnym w języku Julia od 15 do 17 miejsc znaczących, a część ze współczynników potrzebuje więcej. W ten sposób tracą one kilka miejsc znaczących.
+
+\section{Równanie rekurencyjne modelu logistycznego}
+
+\subsection{Opis problemu}
+Problemem zadania jest pewnien model logistyczny, model wzrostu populacji zadany równaniem rekurencyjnym: $p_{n+1} := p_n + rp_n(1 - p_n)$, dla $n = 0, 1, ...$, gdzie r jest pewną daną stałą, $r(1 - p_n)$ jest czynnikiem wzrostu populacji, a $p_0$ jest wielkośćią populacji stanowiącą procent maksymalnej wielkości populacji dla danego stanu środowiska. \\ \\ Celem jest przeprowadzenie trzech eksperymentów (dla każdego po 40 iteracji) dla $p_0 = 0.001$ i $r = 3$:
+\begin{itemize}
+    \item w arytmetyce Float32 bez modyfikacji danych wejściowych;
+    \item w arytmetyce Float64 bez modyfikacji danych wejściowych;
+    \item w arytmetyce Float32, gdzie wartość $p_{10}$ zostanie obcięta do trzech miejsc po przecinku i kolejne liczone już na tej podstawie.
+\end{itemize}
+
+\subsection{Rozwiązanie}
+Rozwiązanie polega na implementacji funkcji obliczającej rekurencyjnie następne czterdzieści wyników równania w arytmetykach Float32 oraz Float64 bez modyfikacji, a także z ucięciem wyrazu $p_{10}$ do trzech miejsc po przecinku w arytmetyce Float32.
+\subsection{Wyniki oraz ich interpretacja}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Iteracja & Float32 (bez modyfikacji) & Float32 (obcięcie po 10 iteracji) & Float64 (bez modyfikacji)\\ \hline
+0 & 0.01 & 0.01 & 0.01\\ \hline
+1 & 0.0397 & 0.0397 & 0.0397\\ \hline
+2 & 0.15407173 & 0.15407173 & 0.15407173000000002\\ \hline
+3 & 0.5450726 & 0.5450726 & 0.5450726260444213\\ \hline
+4 & 1.2889781 & 1.2889781 & 1.2889780011888006\\ \hline
+5 & 0.1715188 & 0.1715188 & 0.17151914210917552\\ \hline
+6 & 0.5978191 & 0.5978191 & 0.5978201201070994\\ \hline
+7 & 1.3191134 & 1.3191134 & 1.3191137924137974\\ \hline
+8 & 0.056273222 & 0.056273222 & 0.056271577646256565\\ \hline
+9 & 0.21559286 & 0.21559286 & 0.21558683923263022\\ \hline
+10 & 0.7229306 & 0.722 & 0.722914301179573\\ \hline
+11 & 1.3238364 & 1.3241479 & 1.3238419441684408\\ \hline
+12 & 0.037716985 & 0.036488228 & 0.03769529725473175\\ \hline
+13 & 0.14660022 & 0.14195873 & 0.14651838271355924\\ \hline
+14 & 0.521926 & 0.5073781 & 0.521670621435246\\ \hline
+15 & 1.2704837 & 1.2572148 & 1.2702617739350768\\ \hline
+16 & 0.2395482 & 0.28709212 & 0.24035217277824272\\ \hline
+17 & 0.7860428 & 0.90110284 & 0.7881011902353041\\ \hline
+18 & 1.2905813 & 1.1684524 & 1.2890943027903075\\ \hline
+19 & 0.16552472 & 0.57796663 & 0.17108484670194324\\ \hline
+20 & 0.5799036 & 1.3097303 & 0.5965293124946907\\ \hline
+21 & 1.3107498 & 0.09274103 & 1.3185755879825978\\ \hline
+22 & 0.088804245 & 0.3451614 & 0.058377608259430724\\ \hline
+23 & 0.3315584 & 1.0232364 & 0.22328659759944824\\ \hline
+24 & 0.9964407 & 0.9519073 & 0.7435756763951792\\ \hline
+25 & 1.0070806 & 1.0892466 & 1.315588346001072\\ \hline
+26 & 0.9856885 & 0.7976118 & 0.07003529560277899\\ \hline
+27 & 1.0280086 & 1.2818935 & 0.26542635452061003\\ \hline
+28 & 0.9416294 & 0.1978212 & 0.8503519690601384\\ \hline
+29 & 1.1065198 & 0.6738851 & 1.2321124623871897\\ \hline
+30 & 0.7529209 & 1.333177 & 0.37414648963928676\\ \hline
+31 & 1.3110139 & 0.0006252018 & 1.0766291714289444\\ \hline
+32 & 0.0877831 & 0.0024996346 & 0.8291255674004515\\ \hline
+33 & 0.3280148 & 0.009979794 & 1.2541546500504441\\ \hline
+34 & 0.9892781 & 0.039620385 & 0.29790694147232066\\ \hline
+35 & 1.021099 & 0.15377222 & 0.9253821285571046\\ \hline
+36 & 0.95646656 & 0.5441512 & 1.1325322626697856\\ \hline
+37 & 1.0813814 & 1.2883033 & 0.6822410727153098\\ \hline
+38 & 0.81736827 & 0.17403738 & 1.3326056469620293\\ \hline
+39 & 1.2652004 & 0.6052825 & 0.0029091569028512065\\ \hline
+40 & 0.25860548 & 1.3220292 & 0.011611238029748606\\ \hline
+\end{tabular}
+\caption{Porównanie wartości $p_n$ wyznaczone z rekurencyjnego równania w kolejnych iteracjach (wartość n).}
+\end{table}
+
+Początkowe wartości $p_n$ wyznaczone z rekurencyjnego równania są do siebie zbliżone we wszystkich esperymentach, jednak czym dalsza iteracja, tym bardziej się od siebie różnią. Obcięcie $p_{10}$ znacząco wpływa na kolejne obliczenia. Od około 19-tej iteracji wyniki Float32 z obcięciem zaczynają odstawać od pozostałych wyników. Natomiast Float32 i Float64 zaczynają się rozbiegać około iteracji 22.
+\subsection{Wnioski}
+Wszystkie uzyskane wyniki są od siebie znacząco różne, a każdy z nich prawdopodobnie zawiera istotny błąd. Przyczyną tego zjawiska jest fakt, że w obliczeniach podnosimy poprzednią wartość do kwadratu, co powoduje, że do jej zapisania wymagane jest aż dwukrotnie więcej cyfr znaczących. W efekcie błędy obliczeniowe zaczynają się kumulować. Każdy kolejny krok iteracyjny wiąże się z zaokrągleniem wartości do określonej precyzji arytmetyki, co dodatkowo pogłębia narastający błąd. W związku z tym proces iteracyjnego rozwiązywania modelu logistycznego okazuje się numerycznie niestabilny, co prowadzi do stopniowego wzrostu nieścisłości i odchylenia wyników od ich rzeczywistych wartości.
+\section{Eksperymenty na podstawie równania rekurencyjnego}
+
+\subsection{Opis problemu}
+Problemem zadania jest przeprowadzenie siedmiu eksperymentów na podstawie równania rekurencyjnego: \\ $x_{n+1} := x_n^2 + c$ dla $n = 0, 1, ...$. \\ \\W tym celu należy wykonać w języku Julia w arytmetyce Float64 po 40 iteracji wyrażenia dla:
+\begin{itemize}
+    \item $c = -2$ i $x_0 \in \{1, 2, 1.99999999999999\}$;
+    \item $c = -1$ i $x_0 \in \{1, -1, 0.75, 0.25\}$.
+\end{itemize}
+\subsection{Rozwiązanie}
+Rozwiązanie polega na implementacji funkcji obliczającej rekurencyjnie następne czterdzieści wyników równania w arytmetyce Float64. Pomocne w rozwiązaniu jest przeprowadzenie iteracji graficznych $x_{n+1} := x_n^2 + c$.
+\subsection{Wyniki oraz ich interpretacja}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+c = -2.0 & 1.0 & 2.0 & 1.99999999999999 \\ \hline
+\( 1 \) & -1.0 & 2.0 & 1.99999999999996  \\ \hline
+\( 2 \) & -1.0 & 2.0 & 1.9999999999998401  \\ \hline
+\( 3 \) & -1.0 & 2.0 & 1.9999999999993605  \\ \hline
+\( 4 \) & -1.0 & 2.0 & 1.999999999997442  \\ \hline
+\( 5 \) & -1.0 & 2.0 & 1.9999999999897682  \\ \hline
+\( 6 \) & -1.0 & 2.0 & 1.9999999999590727  \\ \hline
+\( 7 \) & -1.0 & 2.0 & 1.999999999836291  \\ \hline
+\( 8 \) & -1.0 & 2.0 & 1.9999999993451638  \\ \hline
+\( 9 \) & -1.0 & 2.0 & 1.9999999973806553  \\ \hline
+\( 10 \) & -1.0 & 2.0 & 1.999999989522621  \\ \hline
+\( 11 \) & -1.0 & 2.0 & 1.9999999580904841  \\ \hline
+\( 12 \) & -1.0 & 2.0 & 1.9999998323619383  \\ \hline
+\( 13 \) & -1.0 & 2.0 & 1.9999993294477814  \\ \hline
+\( 14 \) & -1.0 & 2.0 & 1.9999973177915749  \\ \hline
+\( 15 \) & -1.0 & 2.0 & 1.9999892711734937  \\ \hline
+\( 16 \) & -1.0 & 2.0 & 1.9999570848090826  \\ \hline
+\( 17 \) & -1.0 & 2.0 & 1.999828341078044 \\ \hline
+\( 18 \) & -1.0 & 2.0 & 1.9993133937789613 \\ \hline
+\( 19 \) & -1.0 & 2.0 & 1.9972540465439481  \\ \hline
+\( 20 \) & -1.0 & 2.0 & 1.9890237264361752  \\ \hline
+\( 21 \) & -1.0 & 2.0 & 1.9562153843260486  \\ \hline
+\( 22 \) & -1.0 & 2.0 & 1.82677862987391  \\ \hline
+\( 23 \) & -1.0 & 2.0 & 1.3371201625639997  \\ \hline
+\( 24 \) & -1.0 & 2.0 & -0.21210967086482313  \\ \hline
+\( 25 \) & -1.0 & 2.0 & -1.9550094875256163  \\ \hline
+\( 26 \) & -1.0 & 2.0 & 1.822062096315173  \\ \hline
+\( 27 \) & -1.0 & 2.0 & 1.319910282828443 \\ \hline
+\( 28 \) & -1.0 & 2.0 & -0.2578368452837396  \\ \hline
+\( 29 \) & -1.0 & 2.0 & -1.9335201612141288  \\ \hline
+\( 30 \) & -1.0 & 2.0 & 1.7385002138215109  \\ \hline
+\( 31 \) & -1.0 & 2.0 & 1.0223829934574389  \\ \hline
+\( 32 \) & -1.0 & 2.0 & -0.9547330146890065  \\ \hline
+\( 33 \) & -1.0 & 2.0 & -1.0884848706628412  \\ \hline
+\( 34 \) & -1.0 & 2.0 & -0.8152006863380978  \\ \hline
+\( 35 \) & -1.0 & 2.0 & -1.3354478409938944  \\ \hline
+\( 36 \) & -1.0 & 2.0 & -0.21657906398474625  \\ \hline
+\( 37 \) & -1.0 & 2.0 & -1.953093509043491  \\ \hline
+\( 38 \) & -1.0 & 2.0 & 1.8145742550678174  \\ \hline
+\( 39 \) & -1.0 & 2.0 & 1.2926797271549244  \\ \hline
+\( 40 \) & -1.0 & 2.0 & -0.3289791230026702  \\ \hline
+\end{tabular}
+\caption{Wyniki iteracji dla c = -2.0}
+\end{table}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+c = -1.0 & 1.0 & -1.0 & 0.75 & 0.25  \\ \hline
+\( 1 \) & 0.0 & 0.0 & -0.4375 & -0.9375  \\ \hline
+\( 2 \) & -1.0 & -1.0 & -0.80859375 & -0.12109375  \\ \hline
+\( 3 \) & 0.0 & 0.0 & -0.3461761474609375 & -0.9853363037109375 \\ \hline
+\( 4 \) & -1.0 & -1.0 & -0.8801620749291033 & -0.029112368589267135  \\ \hline
+\( 5 \) & 0.0 & 0.0 & -0.2253147218564956 & -0.9991524699951226  \\ \hline
+\( 6 \) & -1.0 & -1.0 & -0.9492332761147301 & -0.0016943417026455965  \\ \hline
+\( 7 \) & 0.0 & 0.0 & -0.0989561875164966 & -0.9999971292061947  \\ \hline
+\( 8 \) & -1.0 & -1.0 & -0.9902076729521999 & -5.741579369278327e-6  \\ \hline
+\( 9 \) & 0.0 & 0.0 & -0.01948876442658909 & -0.9999999999670343  \\ \hline
+\( 10 \) & -1.0 & -1.0 & -0.999620188061125 & -6.593148249578462e-11  \\ \hline
+\( 11 \) & 0.0 & 0.0 & -0.0007594796206411569 & -1.0 \\ \hline
+\( 12 \) & -1.0 & -1.0 & -0.9999994231907058 & 0.0  \\ \hline
+\( 13 \) & 0.0 & 0.0 & -1.1536182557003727e-6 & -1.0  \\ \hline
+\( 14 \) & -1.0 & -1.0 & -0.9999999999986692 & 0.0 \\ \hline
+\( 15 \) & 0.0 & 0.0 & -2.6616486792363503e-12 & -1.0  \\ \hline
+\( 16 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 17 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 18 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 19 \) & 0.0 & 0.0 & 0.0 & -1.0 \\ \hline
+\( 20 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 21 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 22 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 23 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 24 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 25 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 26 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 27 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 28 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 29 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 30 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 31 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 32 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 33 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 34 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 35 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 36 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 37 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 38 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\( 39 \) & 0.0 & 0.0 & 0.0 & -1.0  \\ \hline
+\( 40 \) & -1.0 & -1.0 & -1.0 & 0.0  \\ \hline
+\end{tabular}
+\caption{Wyniki iteracji dla c = -1.0}
+\end{table}
+
+Do pomocy analizy wyników zastała przeprowadzona iteracja graficzna $x_{n+1} := x_n^2 + c$. 
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/iteracja_graficzna/graph1.png}
+        \caption{\\Wykres dla c = -2 i $x_0$ = 1 (czarny) lub $x_0$ = 2 (czerwony). W obu przypadkach ciągi wędrują do punktów stałych, tj. odpowiednio -1 i 2, z których nie można wyjść, co obrazuje nam brak dalszych zmian w Tabeli 9.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/iteracja_graficzna/graph2.png}
+        \caption{\\ Wykres dla c = -2 i $x_0$ = 1.99999999999999 (czarny). W tym przypadku ciąg raczej się nie stabilizuje- wędruje w okolicach wartości 1.9, 1.7, -0.2, -1.9, co zgadza się z danymi Tabeli 9. Cykl się niestabilizuje.}
+    \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/iteracja_graficzna/graph3.png}
+        \caption{\\Wykres dla c = -1 i $x_0$ = 1 (czarny). W tym przypadku widać zacyklenie się procesu, co odpowiada stabilizującym się wynikom zawartym w Tabeli 10, gdzie w kółko powtarzają się wartości 0 i -1.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/iteracja_graficzna/graph4.png}
+        \caption{\\Wykres dla c = -1 i $x_0$ = -1 (czarny). W tym przypadku również widać zacyklenie się procesu, co odpowiada stabilizującym się wynikom zawartym w Tabeli 10, gdzie w kółko powtarzają się wartości 0 i -1.}
+    \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/iteracja_graficzna/graph5.png}
+        \caption{\\Wykres dla c = -1 i $x_0$ = 0.75 (czarny). Podobnie jak w poprzednim przypadku ciąg osiąga stabilizacje dopiero po pewnym czasie (z Tabeli 10 można odczytać, że dzieje się to szybciej, już po 10 iteracji. W kółko powtarzają się wartości 0 i -1.} 
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{/home/aleksandra/Pulpit/Studia/5semestr/ON/Lista2/iteracja_graficzna/graph6.png}
+        \caption{\\Wykres dla c = -1 i $x_0$ = 0.25 (czarny). W tym przypadku ciąg osiąga stabilizacje dopiero po pewnym czasie (z Tabeli 10 można odczytać, że dzieje się to po 15 iteracji. W kółko powtarzają się wartości 0 i -1.}
+    \end{minipage}
+\end{figure}
+
+\subsection{Wnioski}
+Rekurencyjnie wyznaczanie ciągu może mieć różną stabilność w zależności od danych wejściowych, od całkowicie stabilnego, przez stabilizującego się (w różnych tempach w zależności od parametrów), aż do całkowicie niestabilnego. Do uzyskania wiarygodnych wyników trzeba dobrać odpowiednie wartości parametrów i ilość iteracji.
+\end{document}
+  

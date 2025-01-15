@@ -1,0 +1,583 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}   
+\usepackage[polish.sty]{babel}   
+\usepackage[a4paper, top=4.5cm, bottom=3.5cm, left=1.5cm, right=1.5cm]{geometry} 
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsfonts}
+\usepackage[figurename=Rysunek,tablename=Tabela]{caption}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{float}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+
+    \title{\textbf{Obliczenia naukowe \\ \large Lista 3}}
+    \author{Aleksandra Czarniecka (272385)}
+    \date{listopad 2024}
+ 
+    \addtolength{\topmargin}{-3 cm}
+    \addtolength{\textheight}{3 cm}
+\begin{document}
+
+\maketitle
+
+\section{Metoda bisekcji}
+\subsection{Opis problemu}
+Celem zadania jest napisanie funkcji rozwiązującej równanie $f(x) = 0$ metodą bisekcji.\\
+\\ function mbisekcji(f, a::Float64, b::Float64, delta::Float64, epsilon::Float64)
+\\ Dane:
+\begin{itemize}
+    \item \texttt{f} - funkcja $f(x)$ zadana jako anonimowa funkcja,
+    \item \texttt{a, b} - końce przedziału początkowego,
+    \item \texttt{delta, epsilon} - dokładności obliczeń.
+\end{itemize}
+Wyniki:
+\begin{itemize}
+    \item \texttt{r} - przybliżenie pierwiastka równania $f(x) = 0$,
+    \item \texttt{v} - wartość $f(r)$,
+    \item \texttt{it} - liczba wykonanych iteracji,
+    \item \texttt{err} - sygnalizacja błędu:
+    \begin{itemize}[label={}]
+        \item \texttt{0} - brak błędu,
+        \item \texttt{1} - funkcja nie zmienia znaku w przedziale $[a, b]$.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Rozwiązanie}
+Metoda bisekcji to algorytm znajdowania pierwiastków równania $f(x)=0$. Metoda opiera się na Twierdzeniu Darboux i działa na funkcjach ciągłych. Działa na zasadzie iteracyjnego dzielenia na pół przedziału, w którym funkcja zmienia znak (czyli $f(a)⋅f(b)<0$). Wiemy wtedy, że funkcja na pewno przecina oś OX na przedziale $[a, b]$. W każdym kroku oblicza się wartość funkcji w punkcie środkowym przedziału $c=\frac{a+b}{2}$. Jeśli $f(c)=0$, znaleziono pierwiastek, a jeśli nie, to wybiera się tę połowę przedziału, gdzie funkcja zmienia znak. Proces powtarza się, aż wartość funkcji w środku przedziału będzie wystarczająco bliska zera.
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+    \includegraphics[width=1\textwidth]{mB.png}
+    \caption{Graficzne przedstawienie metody bijekcji (rysunek ze slajdów z wykładu).}
+    \end{minipage}
+\end{figure}
+\\ \\ 
+Pseudokod algorytmu przedstawiony na wykładzie. \\
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+\begin{algorithm}[H]
+\caption{Algorytm metody bisekcji}
+\Input{\(f\), \(a\), \(b\), \(\delta\), \(\epsilon\)}
+\Output{\(r\), \(v\), \(it\), \(err\)}
+$u \gets f(a),$\ $v \gets f(b)$\;
+$e \gets b - a$\;
+// sprawdzamy jeden bit reprezentujący znak liczby, zamiast nieprecyzyjnie liczyć $f(a) \cdot f(b)$               
+\\ \If{\(\text{sgn}(u) = \text{sgn}(v)\)} { 
+    \Return Nothing, Nothing, Nothing, 1\;
+}
+$k \gets 1$\;
+\
+\While{true}{
+// obliczanie środka przedziału unikając błędów numerycznych, które mogą powstać przy wzorze $\frac{a+b}{2}$
+    \\ $e \gets e / 2$\;
+    $c \gets a + e$\;
+    $w \gets f(c)$\;
+    \If{\(|e| < \delta \textbf{ or } |w| < \epsilon\)}{
+        \Return \(c, w, k, 0\)\;
+    }
+    \If{\(\text{sgn}(w) \neq \text{sgn}(u)\)}{
+        \(b \gets c,\)\ \(v \gets w\)\;
+    }
+    \Else{
+        \(a \gets c,\)\ \(u \gets w\)\;
+    }
+    \(k \gets k + 1\)\;
+}
+\end{algorithm}
+
+\subsection{Wyniki i ich interpretacja}
+Wszystkie testy przeprowadzone są dla wartości $\delta = \epsilon = 10^{-5}$.
+\begin{itemize}
+    \item Normalny przykład:
+    Testuje standardowe działanie metody bisekcji dla funkcji \(f(x) = x^2 - 4\) w przedziale \([1.0, 3.0]\). Oczekiwany wynik to \(x = 2.0\). Sprawdzane są następujące warunki:
+    \begin{itemize}
+        \item \(f(x)\) w znalezionym punkcie spełnia warunek dokładności (\(|f(x)| \leq \epsilon\)),
+        \item Znalezione rozwiązanie \(x\) mieści się w dopuszczalnym błędzie \(\delta\) względem oczekiwanego wyniku (\(|x - \text{poprawnyWynik}| \leq \delta\)),
+        \item Brak błędu metody (\texttt{err} = 0).
+    \end{itemize}
+    
+    \item Przedział bez zmiany znaku:
+    Test sprawdza sytuację, w której w przedziale \([3.0, 4.0]\) funkcja \(f(x) = x^2 - 4\) nie zmienia znaku. Oczekiwane wyjście to:
+    \begin{itemize}
+        \item Brak wyniku (\texttt{x = Nothing} i \texttt{f(x) = Nothing}),
+        \item Brak iteracji (\texttt{it = Nothing}),
+        \item Kod błędu metody \texttt{err} równy 1.
+    \end{itemize}
+    
+    \item Pierwiastek w połowie przedziału:
+    Testuje przypadek, gdzie pierwiastek funkcji \(f(x) = x^2 - 4\) leży dokładnie w środku przedziału \([1.0, 3.0]\). Oczekiwane wyniki to:
+    \begin{itemize}
+        \item Znaleziony pierwiastek \(x = 2.0\),
+        \item \(f(x) = 0.0\),
+        \item Tylko jedna iteracja (\texttt{it = 1}),
+        \item Brak błędu (\texttt{err} = 0).
+    \end{itemize}
+\end{itemize}
+\subsection{Wnioski}
+Wszystkie testy przeszły, zatem algorytm działa prawidłowo.
+
+
+
+
+\section{Metoda Newtona (stycznych)}
+\subsection{Opis problemu}
+Celem zadania jest napisanie funkcji rozwiązującej równanie $f(x) = 0$ metodą Newtona (metodą stycznych).\\
+\\ function mstycznych(f, pf, x0::Float64, delta::Float64, epsilon::Float64, maxit::Int)
+\\Dane:
+\begin{itemize}
+    \item \texttt{f, pf} - funkcja $f(x)$ oraz jej pochodna $f'(x)$ zadane jako anonimowe funkcje,
+    \item \texttt{x0} - przybliżenie początkowe,
+    \item \texttt{delta, epsilon} - dokładności obliczeń,
+    \item \texttt{maxit} - maksymalna dopuszczalna liczba iteracji.
+\end{itemize}
+Wyniki:
+\begin{itemize}
+    \item \texttt{r} - przybliżenie pierwiastka równania $f(x) = 0$,
+    \item \texttt{v} - wartość $f(r)$,
+    \item \texttt{it} - liczba wykonanych iteracji,
+    \item \texttt{err} - sygnalizacja błędu:
+    \begin{itemize}[label={}]
+        \item \texttt{0} - metoda zbieżna,
+        \item \texttt{1} - nie osiągnięto wymaganej dokładności w \texttt{maxit} iteracji,
+        \item \texttt{2} - pochodna bliska zeru.
+\end{itemize}
+\end{itemize}
+\subsection{Rozwiązanie}
+Metoda Newtona jest metodą iteracyjną, która wymaga znajomości pochodnej funkcji $f′(x)$, zatem funkcja musi być różniczkowalna w otoczeniu szukanego pierwiastka. Naturalnie pochodna funkcji $f′(x)$  nie może być równa zeru w żadnym punkcie iteracji, ponieważ wymagana jest jej wartość w obliczeniach. Przy spełnieniu tych założeń iteracyjnie oblicza się kolejne przybliżenia pierwiastka za pomocą wzoru:
+\[x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)}.\]
+Metoda ta zbiega bardzo szybko (zbieżność kwadratowa) w pobliżu pierwiastka, ale może nie działać dobrze, jeśli początkowe przybliżenie $x_0$ jest daleko od pierwiastka lub $f′(x)$ jest bliskie zeru.
+\\ \\ 
+Metoda Newtona opiera się na wykorzystaniu stycznej do krzywej $f$ w punkcie $x_n$. Punkt przecięcia tej stycznej z osią OX (czyli miejsce, gdzie $y = 0$) staje się następnym przybliżeniem pierwiastka. 
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+    \includegraphics[width=1\textwidth]{mN.png}
+    \caption{Graficzne przedstawienie metody Newtona (rysunek ze slajdów z wykładu).}
+    \end{minipage}
+\end{figure}
+\\ \\
+Pseudokod algorytmu przedstawiony na wykładzie. \\
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+\begin{algorithm}[H]
+\caption{Algorytm metody Newtona}
+    \Input{\(f\), \(pf\), \(x_0\), \(\delta\), \(\epsilon\), \(maxit\)}
+    \Output{\(r\), \(v\), \(it\), \(err\)}
+    $v \gets f(x_0)$\;
+    \If{$|v| < \epsilon$}{
+        \Return{$x_0, v, 0, 0$}\;
+    }
+    \For{$k \gets 1$ \KwTo $maxit$}{
+        $pfx \gets f'(x_0)$\;
+        \If{$|pfx| < \text{eps(Float64)}$}{
+            \Return{$x_0, v, k, 2$}\;
+        }
+        $x_1 \gets x_0 - v/pfx$\;
+        $v \gets f(x_1)$\;
+        \If{$|x_1 - x_0| < \delta$ \textbf{or} $|v| < \epsilon$}{
+            \Return{$x_1, v, k, 0$}\;
+        }
+        $x_0 \gets x_1$\;
+    }
+    \Return{$x_0, fx, maxit, 1$}\;
+\end{algorithm}
+
+\subsection{Wyniki i ich interpretacja}
+Wszystkie testy przeprowadzone są dla wartości $\delta = \epsilon = 10^{-5}$.
+\begin{itemize}
+    \item Normalny przykład:
+    Test sprawdza standardowe działanie metody Newtona dla funkcji \(f(x) = x^3 - 8\) i jej pochodnej \(f'(x) = 3x^2\), z początkowym przybliżeniem \(x_0 = 1.5\). Oczekiwane wyniki to:
+    \begin{itemize}
+        \item \(f(x)\) w znalezionym punkcie spełnia warunek dokładności (\(|f(x)| \leq \epsilon\)),
+        \item Znalezione rozwiązanie \(x\) mieści się w dopuszczalnym błędzie \(\delta\) względem oczekiwanego wyniku (\(|x - \text{poprawnyWynik}| \leq \delta\)),
+        \item Brak błędu metody (\texttt{err} = 0).
+    \end{itemize}
+    
+    \item Pochodna równa 0 w przybliżeniu początkowym:
+    Testuje sytuację, gdzie pochodna funkcji \(f(x) = x^2 - x\), \(f'(x) = 2x - 1\) wynosi 0 dla początkowego przybliżenia \(x_0 = 0.5\). Wynik:
+    \begin{itemize}
+        \item Brak rozwiązania,
+        \item Kod błędu metody \texttt{err} równy 2.
+    \end{itemize}
+    
+    \item Metoda wpada w cykl:
+    Funkcja \(f(x) = x^3 - 2x + 2\) oraz jej pochodna \(f'(x) = 3x^2 - 2\) są użyte do pokazania przypadku, gdzie metoda Newtona wpada w cykl dla początkowego przybliżenia \(x_0 = 0.0\). Wyniki:
+    \begin{itemize}
+        \item Funkcja \(f(x)\) nie spełnia warunku dokładności (\(|f(x)| > \epsilon\)),
+        \item Znalezione rozwiązanie \(x\) nie zbliża się do oczekiwanej wartości w granicach \(\delta\) ($x - 0.0 > \delta$),
+        \item Liczba iteracji osiąga maksymalną wartość (\texttt{it = 31}),
+        \item Kod błędu \texttt{err} równy 1.
+    \end{itemize}
+\end{itemize}
+\subsection{Wnioski}
+Wszystkie testy przeszły, zatem algorytm działa prawidłowo.
+
+
+\section{Metoda siecznych}
+\subsection{Opis problemu}
+Celem zadania jest napisanie funkcji rozwiązującej równanie $f(x) = 0$ metodą siecznych.\\ \\
+function msiecznych(f, x0::Float64, x1::Float64, delta::Float64, epsilon::Float64, maxit::Int) \\
+Dane:
+\begin{itemize}
+     \item \texttt{f} - funkcja $f(x)$ zadana jako anonimowa funkcja,
+     \item \texttt{x0, x1} - przybliżenia początkowe,
+     \item \texttt{delta, epsilon} - dokładności obliczeń,
+     \item \texttt{maxit} - maksymalna dopuszczalna liczba iteracji.
+\end{itemize}
+Wyniki:
+\begin{itemize}
+    \item \texttt{r} - przybliżenie pierwiastka równania $f(x) = 0$,
+    \item \texttt{v} - wartość $f(r)$,
+    \item \texttt{it} - liczba wykonanych iteracji,
+    \item \texttt{err} - sygnalizacja błędu:
+    \begin{itemize}[label={}]
+        \item 0 - metoda zbieżna,
+        \item 1 - nie osiągnięto wymaganej dokładności w \texttt{maxit} iteracji.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Rozwiązanie}
+Metoda siecznych to wariant metody Newtona, który nie wymaga znajomości pochodnej funkcji. Zamiast tego aproksymuje pochodną za pomocą różnicy ilorazowej między dwiema ostatnimi iteracjami:
+\[x_{n+1} = x_n - f(x_1) \cdot \frac{x_n - x_{n-1}}{f(x_n)-f(x_{n-1})}.\]
+Metoda wymaga ciągłości funkcji oraz dwóch początkowych przybliżeń $x_0$ i $x_1$ (przy czym $f(x_0) \neq f(x_1))$. Metoda zakłada, że funkcja jest dostatecznie "dobrze zachowująca się" (brak punktów przegięcia czy skokowych zmian w zachowaniu). Jest bardziej uniwersalna niż metoda Newtona, ale może być wolniejsza, ponieważ zbieżność jest nadliniowa, a nie kwadratowa.
+\\ \\ Metoda siecznych opiera się na przybliżeniu pochodnej $f'(x)$ za pomocą różnicy ilorazowej:
+\[f'(x) \approx  \frac{f(x_n)-f(x_{n-1})}{x_n - x_{n-1}}.\] Punkt przecięcia się siecznej łączącej punkty $(x_{n-1}, f(x_{n-1})$ i $(x_{n}, f(x_{n}))$ z osią OX (czyli miejsce, gdzie $y = 0$) staje się następnym przybliżeniem pierwiastka $x_{n+1}$. 
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+    \includegraphics[width=1\textwidth]{mS.png}
+    \caption{Graficzne przedstawienie metody siecznych (rysunek ze slajdów z wykładu).}
+    \end{minipage}
+\end{figure}
+\\ \\ Pseudokod algorytmu przedstawiony na wykładzie. \\
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+\begin{algorithm}[H]
+\caption{Algorytm metody siecznych}
+\KwData{$f$, $x0$, $x1$, $\delta$, $\epsilon$, $maxit$}
+\KwResult{$r$, $v$, $it$, $err$}
+$fx0 \gets f(x0)$\;
+$fx1 \gets f(x1)$\;
+\For{$k \gets 1$ \KwTo $maxit$}{
+    \If{$|fx0| > |fx1|$}{
+        $x0 \leftrightarrow x1,$\ $fx0 \leftrightarrow fx1$\;
+    }
+    $s \gets (x1 - x0)/(fx1 - fx0)$\;
+    $x1 \gets x0,$\ $fx1 \gets fx0$\;
+    $x0 \gets x0 - fx0*s$\;
+    $fx0 \gets f(x0)$\;
+    \If{$|x1 - x0| < \delta$ or $|fx0| < \epsilon$}{
+        \Return{$x0, fx0, k, 0$}\;
+    }
+}
+\Return{$x0, fx0, maxit, 1$}\;
+\end{algorithm}
+
+\subsection{Wyniki i ich interpretacja}
+Wszystkie testy przeprowadzone są dla wartości $\delta = \epsilon = 10^{-5}$.
+\begin{itemize}
+    \item Normalny przykład:
+    Testuje działanie metody siecznych dla funkcji \(f(x) = x^2 - 9\) w przedziale początkowym \([2.0, 4.0]\). Oczekiwany wynik to \(x = 3.0\). Weryfikowane są następujące warunki:
+    \begin{itemize}
+        \item \(f(x)\) w znalezionym punkcie spełnia warunek dokładności (\(|f(x)| \leq \epsilon\)),
+        \item Znalezione rozwiązanie \(x\) mieści się w dopuszczalnym błędzie \(\delta\) względem oczekiwanego wyniku (\(|x - \text{poprawnyWynik}| \leq \delta\)),
+        \item Brak błędu metody (\texttt{err} = 0).
+    \end{itemize}
+    
+    \item Funkcja równa zero w punkcie zerowym:
+    Test pokazuje sytuację, w której funkcja \(f(x) = x^2\) ma zerową wartość w przedziale początkowym \([-2.0, 2.0]\). Wyniki:
+    \begin{itemize}
+        \item Brak wyniku (\texttt{x = "not a number"} i \texttt{f(x) = "not a number"}),
+        \item Maksymalna liczba iteracji (\texttt{it = 20}),
+        \item Kod błędu metody \texttt{err} równy 1.
+    \end{itemize}
+\end{itemize}
+\subsection{Wnioski}
+Wszystkie testy przeszły, zatem algorytm działa prawidłowo.
+
+
+
+
+
+\section{Wyznaczenie pierwiastka równania}
+\subsection{Opis problemu}
+Problemem zadania jest wyznaczenie pierwiastka równania $sin(x) - (\frac{1}{2}x)^2 = 0$ za pomocą trzech zaimplementowanych wcześniej metod, tj:
+\begin{enumerate}
+    \item bisekcji z przedziałem początkowym $[1.5, 2]$ i $\delta = \frac{1}{2}10^{-5}$, $\epsilon = \frac{1}{2}10^{-5}$,
+    \item Newtona z przybliżeniem początkowym $x_0 = 1$ i $\delta = \frac{1}{2}10^{-5}$, $\epsilon = \frac{1}{2}10^{-5}$,
+    \item siecznych z przybliżeniami początkowym $x_0 = 1$, $x_1 = 2$ i $\delta = \frac{1}{2}10^{-5}$, $\epsilon = \frac{1}{2}10^{-5}$.
+\end{enumerate}
+\subsection{Rozwiązanie}
+Rozwiązanie zadania polega na wywołaniu zaimplementowanych metod w poprzednim zadaniu, w podany sposób:
+\begin{itemize}
+    \item \texttt{mbisekcji($sin(x) - (\frac{1}{2}x)^2$, $1.5$, $2.0$, $\frac{1}{2}10^{-5}$, $\frac{1}{2}10^{-5}$)}
+    \item \texttt{mstycznych($sin(x) - (\frac{1}{2}x)^2$, $cos(x) - \frac{x}{2}$, $1.5$, $\frac{1}{2}10^{-5}$, $\frac{1}{2}10^{-5}$, $20$)}
+    \item \texttt{msiecznych($sin(x) - (\frac{1}{2}x)^2$, $1.0$, $2.0$, $\frac{1}{2}10^{-5}$, $\frac{1}{2}10^{-5}$, $20$)}
+\end{itemize}
+\subsection{Wyniki i ich interpretacja}
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+    \includegraphics[width=1\textwidth]{desmos-graph(2).png}
+    \caption{Wykres funkcji $sin(x) - (\frac{1}{2}x)^2 = 0$.}
+    \end{minipage}
+\end{figure}
+   \begin{table}[H]
+    \centering
+    \begin{tabular}{|c||c|c|c|c|}
+        \hline
+        Metoda & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        bisekcji & 1.9337539672851562 & -2.7027680138402843e-7 & 16 & 0\\
+        \hline
+        Newtona & 1.933753779789742 & -2.2423316314856834e-8 & 4 & 0\\
+        \hline
+        siecznych & 1.933753644474301 & 1.564525129449379e-7 & 4 & 0\\
+        \hline
+    \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka równania $sin(x) - (\frac{1}{2}x)^2 = 0$.}
+\end{table}
+\\ Wyniki otrzymane w programie Wolfram Alpha: $1.93375$.   
+\\ \\ Wszystkie zastosowane metody zwróciły kod błędu równy 0, co oznacza brak wystąpienia błędów i ostrzeżeń podczas obliczeń. Uzyskane wartości przybliżeń pierwiastka dla każdej z metod są podobne, zgadzają się do szóstego miejsca po przecinku oraz mieszczą się w akceptowalnych granicach określonych przez $\delta$ i $\epsilon$. Warto jednak zwrócić uwagę na różnice w wartościach funkcji obliczonych dla tych przybliżeń – różnice te mogą osiągać różne rzędy wielkości. Można także zauważyć, że metoda bisekcji wykonała cztery razy więcej iteracji niż pozostałe metody.
+\subsection{Wnioski}
+Wszystkie metody poprawnie zrealizowały zadanie, a różnice w wynikach przybliżeń mieszczą się w akceptowalnych granicach.
+Najlepszy wynik, zarówno pod względem dokładności, jak i efektywności, osiągnęliśmy jednak za pomocą metody Newtona. Metoda siecznych również okazała się szybka. Natomiast metoda bisekcji jest pomocna niezależnie od podanych parametrów.
+
+\section{Znajdowanie wartości zmiennej $x$}
+\subsection{Opis problemu}
+Problemem zadania jest znalezienie wartośći zmiennej $x$, dla której przecinają się wykresy funkcji $y = 3x$ i $y = e^x$ za pomocą wcześniej zaimplementowanej metody bisekcji. Wymagana dokładność obliczeń wynosi: $\delta = 10^{-4}$, $\epsilon = 10^{-4}$.
+\subsection{Rozwiązanie}
+Rozwiązanie polega na znalezieniu takiej wartości $x$, dla której $e^x = 3x$. Zatem możemy stworzyć funkcję $f(x) = e^x - 3x$, dla której musimy znależć miejsca zerowe za pomocą wywołania zaimplementowanej wcześniej metody bisekcji. 
+\\ \\ Do wywołania należy dobrać odpowiedni przedział przeszukiwania.  Sprawdźmy co się dzieje dla $x \leq 0$. Wtedy łatwo zauważyć, że $f(x) > 0$. Zatem przedział $(-\infty, 0]$ można odrzucić. Dla $x = 1$, $f(x) < 0$, gdyż $e^1 \approx 2.718 < 3 \cdot 1$. Natomiast dla $x = 4$ otrzymujemy $e^4 > 2^4 = 16 > 12 = 3 \cdot 4$, więc znowu $f(x) > 0$. 
+\\ \\W związku z tym rozpatrujemy dwa przedziały: $[0, 1]$ oraz $[1, 4]$
+\subsection{Wyniki i ich interpretacja}
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+    \includegraphics[width=1\textwidth]{desmos-graph(1).png}
+    \caption{Wykres funkcji $f(x) = e^x - 3x$.}
+    \end{minipage}
+\end{figure}
+   \begin{table}[H]
+    \centering
+    \begin{tabular}{|c||c|c|c|c|}
+        \hline
+        Przedział & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        $[0.0, 1.0]$ & 0.619140625 & 9.066320343276146e-5 & 9 & 0\\
+        \hline
+        $[1.0, 4.0]$ & 1.51214599609375 & -1.7583570236290313e-5 & 14 & 0\\
+        \hline
+    \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka równania $e^x - 3x = 0$ dla dobrze dobranych przedziałów.}
+\end{table}
+\\ Wyniki otrzymane w programie Wolfram Alpha: $0.619061$ oraz $1.51213$.  
+\\ \\ Otrzymane wyniki dla źle dobranych przedziałów $[-10^{38}, 1]$ oraz $[1, 10^{38}]$:
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c||c|c|c|c|}
+\hline
+        Przedział & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        $[-10^{27}, 1.0]$ & -9.860761315262648e-5 & -1.0001972200878761 & 103 & 0\\
+        \hline
+        $[1.0, 10^{27}]$ & 1.5121679427147419 & -5.1304670852125867e-5 & 102 & 0 \\
+        \hline
+    \end{tabular}
+    \caption{Wartości przybliżenia pierwiastka równania $e^x -3x = 0$ dla źle dobranych przedziałów.}
+\end{table}
+Można zauważyć, że przy dobrze dobranym przedziale liczba iteracji algorytmu jest zdecydowanie mniejsza, a wartość pierwiastka bliższa prawdziwemu.
+
+
+
+\subsection{Wnioski}
+Wybór zbyt dużego przedziału prowadzi do działań na dużych liczbach i błędów związanych z precyzją arytmetyki. Zatem prawidłowe dobranie początkowych parametrów problemu jest kluczowe. W związku z tym ważna jest dokładna analiza problemu, czyli zapoznanie się z zachowaniem funkcji f. Dzięki niej można ograniczyć obszary poszukiwań, co ułatwia zadanie znaczącą redukcją liczb wymaganych iteracji algorytmu. Sprawia to także, że uzyskujemy dokładniejsze wyniki. 
+\section{Znajdowanie miejsc zerowych}
+\subsection{Opis problemu}
+Problemem zadania jest znalezienie miejsca zerowego funkcji $f_1(x) = e^{1-x} - 1$ oraz $f_2(x) = xe^{-x}$ za pomocą wcześniej zaimplementowanych metod bisekcji, Newtona i siecznych. Wymagana dokładność obliczeń wynosi: $\delta = 10^{-5}$, $\epsilon = 10^{-5}$. Przedział i przybliżenia początkowe należy odpowiednio dobrać. 
+\\ \\ Należy również sprawdzić co się stanie, gdy w metodzie Newtona dla $f_1$ wybierzemy $x_0 \in (1, \infty]$, a dla $f_2$ wybierzemy $x_0 > 1$ i czy można wybrać $x_0 = 1$ dla $f_2$. 
+\subsection{Rozwiązanie}
+Rozwiązanie zadania polega na wywołaniu zaimplementowanych w poprzednim zadaniu metod na dwóch funkcjach $f_1$ oraz $f_2$. Z wykresu funkcji $f_1$ można zauważyć, że wraz ze wzrostem $x$ staje się płaski, zatem zbliża pochodną do 0, co może powodować problemu obliczeń w metodach Newtona i siecznych. Natomiast funkcja $f_2$ około $x = 1$ ma maksimum lokalne, zatem w tym punkcie metoda Newtona będzie nieużyteczna. Dodatkowo funkcja ta dla dużych $x$ przyjmuje wartości bliskie zera, co może powodować traktowanie całych odcinków jako miejsc zerowych przez każdą z metod. Na podstawie tej analizy zostaną przeprowadzone testy dla różnych  dobranych parametrów. 
+\subsection{Wyniki i ich interpretacja}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+    \includegraphics[width=1\textwidth]{desmos-graph(3).png}
+    \caption{Wykres funkcji $f_1(x) = e^{1-x} - 1$ (zielony) oraz $f_2(x) = xe^{-x}$ (czarny).}
+    \end{minipage}
+\end{figure}
+\begin{enumerate}[label=(\alph*)]
+    \item $f(x) = e^{1-x} - 1$, miejsce zerowe dla $x = 1$
+    \begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        Metoda & Dane & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        bisekcji & $[0.0, 2.0]$ & 1.0 & 0.0 & 1 & 0 \\
+        \hline
+        bisekcji & $[0.0, 2.1]$ &0.9999961853027345 & 3.814704541582614e-6 & 17 & 0\\
+        \hline
+        bisekcji & $[0.0, 1.0e6]$ & 1.0000067630433478 & -6.763020478417481e-6 & 33 & 0 \\
+        \hline
+        bisekcji & $[-10^{27}, 10^{27}]$ & 1.0000044568840734 & -4.456874141411937e-6 & 106 & 0 \\
+        \hline
+            \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka funkcji $f_1$ metodą bisekcji.}
+\end{table}
+Metoda bisekcji jest najbardziej skuteczna, gdy pierwiastek znajduje się w środku przedziału. Mniejsze przedziały prowadzą do szybszej zbieżności, ale metoda radzi sobie także z dużymi przedziałami, oczywiście przy większej ilości iteracji.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        Metoda & Dane & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        Newtona & $x_0 = -1024.0 $ &NaN & NaN & 20 & 1\\
+        \hline
+        Newtona &$x_0 = - 100.0$ &-80.0 & 1.5060973145850306e35 & 20 & 1 \\
+        \hline
+        Newtona & $x_0 = - 10.0$ & 0.9999999998781014 & 1.2189871334555846e-10 & 15 & 0 \\
+        \hline
+        Newtona & $x_0 = -1.0$ & 0.9999922654776594 & 7.734552252003368e-6 & 5 & 0\\
+        \hline
+        Newtona & $x_0 = 1.0 $ & 1.0 & 0.0 & 0 & 0 \\
+        \hline
+        Newtona &$x_0 =2.0$ &0.9999999810061002 & 1.8993900008368314e-8 & 5 & 0\\
+        \hline
+        Newtona & $x_0 = 10.0$ & NaN & NaN & 20 & 1 \\
+        \hline
+        Newtona &$x_0 =  100.0$ &100.0 & -1.0 & 1 & 2\\
+        \hline
+        Newtona & $x_0 = 1024.0$ & 1024.0 & -1.0 & 1 & 2\\
+        \hline
+            \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka funkcji $f_1$ metodą Newtona.}
+\end{table}
+Metoda Newtona charakteryzuje się szybszą zbieżnością w porównaniu z metodą bisekcji, jednak jej skuteczność silnie zależy od wyboru wartości początkowej. Zbyt duże wartości dodatnie lub ujemne \(x_0\) mogą prowadzić do rozbieżności.
+\\ \\
+Analiza wyników wskazuje, że metoda Newtona działa szybko i efektywnie w przypadku, gdy \(|x_0| < 1\), zapewniając precyzyjne przybliżenie pierwiastka. Jednak gdy \(x_0\) jest znacznie mniejsze od rzeczywistego pierwiastka, wartość pochodnej \(f'(x)\) może stać się bardzo duża, co powoduje problemy z dokładnością obliczeń numerycznych.
+\\ \\ 
+Dla \(x_0 = 1\) metoda nie wymaga żadnych iteracji, natomiast dla \(x_0 > 1\) obserwuje się znaczące różnice w zbieżności. Gdy \(x_0\) znajduje się blisko 1, wartość \(f'(x)\) jest bardzo mała, co prowadzi do spowolnionej zbieżności. W przypadku wartości \(x_0\) znacznie większych od pierwiastka, pochodna staje się ekstremalnie mała, co uniemożliwia zbieżność i generuje błędy numeryczne (\(err = 1\) lub \(err = 2\)).
+            \begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        Metoda & Dane & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        siecznych & $[0.0, 2.0]$ & 1.0000017597132702 & -1.7597117218937086e-6 & 6 & 0 \\
+        \hline
+        siecznych & $[0.0, 2.1]$ & 0.9999999880129666 & 1.1987033365912225e-8 & 7 & 0\\
+        \hline
+        siecznych & $[0.1, 1024.0]$ & NaN & NaN & 20 & 1 \\
+        \hline
+        siecznych & $[1.1, 1024.0]$ & 1.1 & -0.09516258196404048 & 2 & 0 \\
+        \hline
+        siecznych & $[-1024.0, 1024.0]$ & 1024.0 & -1.0 & 1 & 0 \\
+        \hline
+        siecznych & $[-10^{27}, -1.0]$ & -1.0 & 6.38905609893065 & 1 & 0\\
+        \hline
+    \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka funkcji $f_1$ metodą siecznych.}
+\end{table}
+Metoda siecznych lepiej radzi sobie z nieoptymalnymi wartościami początkowymi niż metoda Newtona, dając poprawne wyniki dla szerokich przedziałów. Problemy występują, gdy jedna z wartości początkowych jest dużą liczbą ujemną, co prowadzi do niemal pionowej siecznej i kończy iterację po jednym kroku (różnica między kolejnymi przybliżeniami jest mniejsza od wymaganej dokładności). Podobnie, gdy początkowe wartości są bliskie sobie, sieczna staje się niemal pozioma, a metoda rozbiega się.
+    \item $f(x) = x e^{-x}$, miejsce zerowe dla $x = 0$
+    \begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        Metoda & Dane & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        bisekcji & $[0.0, 2.0]$ & 7.62939453125e-6 & 7.62933632381113e-6 & 18 & 0 \\
+        \hline
+        bisekcji & $[-10^{27}, 10^{27}]$ &0.0 & 0.0 & 1 & 0 \\
+        \hline
+        bisekcji & $[0.0, 2.1]$ &8.0108642578125e-6 & 8.010800084123387e-6 & 18 & 0\\
+        \hline
+        bisekcji & $[0.0, 1.0e6]$ & 500000.05 & 0.0 & 1 & 0\\
+        \hline
+                bisekcji & $[-10^{27}, 10^{17}]$ & 4.179237187112514e16 & 0.0 & 34 & 0\\
+        \hline
+    \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka funkcji $f_2$ metodą bisekcji.}
+\end{table}
+Metoda bisekcji jest bardzo skuteczna, ale w tym przypadku funkcja zaczyna przyjmować wartości bardzo bliskie zeru, choć nigdy nie osiąga tej wartości. W arytmetyce IEEE 754 nie da się zapisać coraz mniejszych liczb w nieskończoność – po pewnym momencie są one zaokrąglane do zera. Dlatego dla niektórych przedziałów metoda zwraca pierwiastki znacznie odbiegające od wartości rzeczywistej. Problemem jest tutaj ograniczona precyzja obliczeń numerycznych, a nie metoda.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        Metoda & Dane & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        Newtona & $x_0 = -1024.0 $ &NaN & NaN & 20 & 1 \\
+        \hline
+        Newtona &$x_0 = - 100.0$ & -80.21919260199935 & -5.533895786593711e36 & 20 & 1 \\
+        \hline
+        Newtona & $x_0 = - 10.0$ & -3.784424932490619e-7 & -3.784426364678097e-7 & 16 & 0\\
+        \hline
+        Newtona & $x_0 = -1.0$ & 1.0 & 0.36787944117144233 & 1 & 2\\
+        \hline
+        Newtona & $x_0 = 1.0 $ & 14.398662765680003 & 8.03641534421721e-6 & 10 & 0 \\
+        \hline
+        Newtona &$x_0 =2.0$ &14.398662765680003 & 8.03641534421721e-6 & 10 & 0\\
+        \hline
+        Newtona & $x_0 = 10.0$ & 14.380524159896261 & 8.173205649825554e-6 & 4 & 0 \\
+        \hline
+        Newtona &$x_0 =  100.0$ & 100.0 & 3.7200759760208363e-42 & 0 & 0\\
+        \hline
+        Newtona & $x_0 = 1024.0$ & 1024.0 & 0.0 & 0 & 0 \\
+        \hline
+            \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka funkcji $f_2$ metodą Newtona.}
+\end{table}
+Kiedy początkowa wartość \(x_0\) jest znacznie mniejsza od pierwiastka, metoda Newtona prowadzi do błędów. Jeśli \(x_0\) jest mniejsze od 0, ale stosunkowo bliskie pierwiastkowi, metoda działa poprawnie. Natomiast dla \(x_0 = 0\) nie wykonuje się żadnych iteracji. W przedziale \(0 < x_0 < 1\) metoda Newtona poprawnie zbiega do pierwiastka. 
+\\ \\
+Dla \(x_0 = 1\), gdzie pochodna \(f'(1) = 0\), pojawia się błąd \(err = 2\). Jeżeli \(x_0 > 1\), ale bardzo bliskie tej wartości, metoda zaczyna się rozbiegać, coraz bardziej oddalając się od pierwiastka. Proces zatrzymuje się dopiero, gdy osiągnięte zostanie pierwsze rozwiązanie spełniające warunek \(|v| < \epsilon\). W sytuacji, gdy \(x_0\) jest znacznie większe od pierwiastka, metoda kończy działanie niemal od razu, zwracając \(x_0\), ponieważ warunek \(|v| < \epsilon\) jest spełniony już na początku.
+        \begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        Metoda & Dane & Przybliżenie pierwiastka r & f(r) & Liczba iteracji & Kod błędu\\
+        \hline
+        \hline
+        siecznych & $[0.0, 2.0]$ & 2.3230523266763964e-6 & 2.323046930110552e-6 & 5 & 0 \\
+        \hline
+        siecznych & $[0.0, 2.1]$ & 0.0 & 0.0 & 1 & 0 \\
+        \hline
+        siecznych & $[0.1, 1024.0]$ &1024.0 & 0.0 & 1 & 0 \\
+        \hline
+        siecznych & $[1.1, 1024.0]$ & 1024.0 & 0.0 & 1 & 0 \\
+        \hline
+                siecznych & $[-1024.0, 1024.0]$ &  1024.0 & 0.0 & 1 & 0\\
+        \hline
+        siecznych & $[-10^{27}, -1.0]$ &-1.0 & -2.718281828459045 & 1 & 0 \\
+        \hline
+    \end{tabular}
+    \caption{Wyniki wyznaczania pierwiastka funkcji $f_2$ metodą siecznych.}
+\end{table}
+Dla bliskich przybliżeń pierwiastka metoda siecznych działa poprawnie - jeśli jedno z przybliżeń jest równe pierwiastkowi, to zostanie on zwrócony. Gdy jednak początkowe przybliżenia są znacznie oddalone od pierwiastka, metoda siecznych może zwrócić wynik znacząco odbiegający od prawdziwego. W takich przypadkach istnieje ryzyko, że metoda nie zdąży zbiec do właściwego rozwiązania.
+\end{enumerate}
+
+\subsection{Wnioski}
+Metody bisekcji, Newtona i siecznych nie dają pełnej gwarancji poprawności, jednak są w miarę skuteczne. Ich wydajność zależy od charakterystyki funkcji i dobranych parametrów początkowych (szczególnie w metodzie Newtona i siecznych, ze względu na ich lokalną zbieżność). Metoda bisekcji jest najstabilniejsza, metoda Newtona najszybsza przy dobrym wyborze $x_0$, a metoda siecznych dobrze radzi sobie z różnorodnymi punktami startowymi.
+
+\end{document}

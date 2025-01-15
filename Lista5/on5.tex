@@ -1,0 +1,634 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}   
+\usepackage[polish.sty]{babel}   
+\usepackage[a4paper, top=5cm, bottom=3.5cm, left=1.5cm, right=1.5cm]{geometry} 
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsfonts}
+\usepackage[figurename=Rysunek,tablename=Tabela]{caption}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{float}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\SetKwProg{Fn}{Function}{}{}
+\SetKwInOut{Input}{Dane}
+\SetKwInOut{Output}{Wyniki}
+
+
+
+    \title{\textbf{Obliczenia naukowe \\ \large Lista 5}}
+    \author{Aleksandra Czarniecka (272385)}
+    \date{styczeń 2025}
+ 
+    \addtolength{\topmargin}{-3 cm}
+    \addtolength{\textheight}{3 cm}
+\begin{document}
+\maketitle
+\section*{Wstęp: Przedstawienie problemu}
+	Problemem jest rozwiązanie układu równań liniowych
+	\[\mathbf{A} \mathbf{x} = \mathbf{b},\]
+	dla danej macierzy współczynników $\mathbf{A}  \in \mathbb{R}^{n \times n}$
+	i wektora prawych stron $\mathbf{b} \in \mathbb{R}^n$, $n \geq 4$, gdzie $\mathbf{x} \in \mathbb{R}^n$ jest wektorem niewiadomych. \\ \\
+	\noindent Macierz $\mathbf{A}$ jest macierzą rzadką (tj. mającą dużo elementów zerowych) blokową o następującej strukturze:
+	$$
+	\mathbf{A} =
+	\left(\begin{array}{ccccccc}
+	A_1 & C_1 & 0 & 0 & 0 & \cdots & 0 \\
+	B_2 & A_2 & C_2 & 0 & 0  & \cdots & 0 \\
+	0  & B_3 & A_3 & C_3 & 0  & \cdots & 0 \\
+	\vdots & \ddots & \ddots & \ddots & \ddots & \ddots & \vdots\\
+	0   & \cdots & 0  & B_{v-2} & A_{v-2} & C_{v-2} & 0 \\
+	0  & \cdots & 0  & 0 &B_{v-1} & A_{v-1} & C_{v-1}  \\
+	0  & \cdots & 0& 0 & 0 & B_{v} & A_{v}  \\
+	\end{array}\right),
+	$$
+	$v = n/\ell$, zakładając że $n$ jest podzielne przez $\ell$, gdzie $\ell \geq 2$ jest rozmiarem wszystkich kwadratowych macierzy wewnętrznych (bloków): $\mathbf{A}_k$, $\mathbf{B}_k$, $\mathbf{C}_k$. \\ \\
+	
+    Macierze są następującej postaci:
+	\begin{itemize}
+		\item $\mathbf{A}_k \in \mathbb{R}^{\ell\times \ell}$,   $k = 1, \ldots,v$ -- macierze gęste,
+        \item $\mathbf{0}$ -- kwadratowe macierze zerowe stopnia $\ell$,
+		\item $\mathbf{B}_k \in \mathbb{R}^{\ell\times \ell}$,   $k = 2, \ldots,v$ -- macierze mające tylko dwie ostatnie kolumny niezerowe
+		$$
+		\mathbf{B}_k =
+		\left(\begin{array}{ccccc}
+		0 & \cdots & 0 & b_{1\,\ell-1}^k & b_{1\,\ell}^k \\
+		0 & \cdots & 0 & b_{2\,\ell-1}^k & b_{2\,\ell}^k \\
+		\vdots & & \vdots & \vdots & \vdots \\
+		0 & \cdots & 0 & b_{\ell\,\ell-1}^k & b_{\ell\,\ell}^k \\
+		\end{array}\right),
+		$$
+		\item $\mathbf{C}_k \in \mathbb{R}^{\ell\times \ell}$,   $k = 1, \ldots,v\!-\!1$ -- macierze diagonalne
+		$$
+		\mathbf{C}_k =
+		\left(\begin{array}{ccccc}
+		c_{1}^k & 0 & 0 & \cdots & 0  \\
+		0 &  c_{2}^k &  0 & \cdots & 0  \\
+		\vdots &  \ddots &  \ddots & \ddots & \vdots  \\
+		0 & \cdots & 0 &  c_{\ell-1}^k & 0 \\
+		0 & \cdots & 0 &  0 & c_{\ell}^k \\
+		\end{array}\right).
+		$$
+	\end{itemize}
+
+	Testowane macierze mają duży rozmiar, zatem wyklucza to pamiętanie macierzy $\mathbf{A}$ jako tablicę o wymiarach $n \times n$ oraz użycie standardowych (bibliotecznych) algorytmów dla macierzy gęstych (tj. takich, gdzie
+	nie zakłada się dużej liczby elementów zerowych). Zatem potrzebna jest specjalna struktura pamiętająca efektywnie macierz $\mathbf{A}$, która pamięta tylko elementy niezerowe. W tym celu została użyta biblioteka \texttt{SparseArrays}. Zakładamy, że dostęp do elementu macierzy jest w czasie stałym -- $O(1)$. Jednak w rzeczywistości tak nie jest. \\ \\
+	
+	Standardowe algorytmy  zostały zaadaptowane tak, aby uwzględniały one specyficzną postać macierzy $\mathbf{A}$, tj. jej rzadkość, regularność występowania elementów zerowych i niezerowych. Wszystkie algorytmy zostały napisane w języku Julia. \\ \\
+
+    W celu przyspieszenia pracy algorytmów zostały stworzone funkcje pomocnicze, które są kluczowe do pracy z macierzą o strukturze blokowej, gdzie każdy blok ma wymiary \( \ell \times \ell \). Ich celem jest efektywne wyznaczanie indeksów granicznych wierszy i kolumn należących do poszczególnych bloków. Wyjaśnienie działania poszczególnych funkcji przedstawiono poniżej.
+    \\ \\ 
+    Funkcja \texttt{last\_row(k, l, n)}} \\ \\
+Funkcja ta wyznacza ostatni wiersz dla bloku zawierającego wiersz \( k \). Jest to niezbędne do określenia zakresu wierszy dla danego bloku. 
+Zwraca wartość:
+\[
+\text{last\_row}(k, \ell, n) = \min\left(\ell + \ell \cdot \left\lfloor \frac{k+1}{\ell} \right\rfloor, n \right),
+\]
+gdzie:
+\begin{itemize}
+    \item \( \ell \) – rozmiar bloku (liczba wierszy w każdym bloku),
+    \item \( n \) – całkowita liczba wierszy w macierzy.
+\end{itemize}
+Działanie funkcji polega na przesunięciu indeksu \( k \) w obrębie jego bloku, a następnie uwzględnieniu ograniczenia wynikającego z całkowitego rozmiaru macierzy \( n \). \\ \\
+Funkcja \texttt{last\_column(k, l, n)} \\ \\
+Funkcja ta wyznacza ostatnią kolumnę dla bloku zawierającego kolumnę \( k \). Zwraca wartość:
+\[
+\text{last\_column}(k, \ell, n) = \min(k + \ell, n),
+\]
+gdzie:
+\begin{itemize}
+    \item \( k \) – indeks kolumny,
+    \item \( \ell \) – rozmiar bloku (liczba kolumn w każdym bloku),
+    \item \( n \) – całkowita liczba kolumn w macierzy.
+\end{itemize}
+Funkcja zapewnia, że indeks ostatniej kolumny nie wyjdzie poza całkowity rozmiar macierzy. \\ \\
+
+Funkcja \texttt{first\_column(i, l)} \\ \\
+Funkcja ta wyznacza pierwszą kolumnę bloku, do którego należy kolumna \( i \). Zwraca wartość:
+\[
+\text{first\_column}(i, \ell) = \max\left(\ell \cdot \left\lfloor \frac{i-1}{\ell} \right\rfloor - 1, 1\right),
+\]
+gdzie:
+\begin{itemize}
+    \item \( i \) – indeks kolumny,
+    \item \( \ell \) – rozmiar bloku.
+\end{itemize}
+Funkcja oblicza początek bloku, w którym znajduje się kolumna \( i \), i gwarantuje, że indeks nie będzie mniejszy niż 1.
+
+    
+\section{Metoda eliminacji Gaussa}
+Metoda eliminacji Gaussa służy do rozwiązywania układów równań liniowych w postaci:
+\[
+A \mathbf{x} = \mathbf{b},
+\]
+gdzie $A \in \mathbb{R}^{n \times n}$ jest macierzą współczynników, $\mathbf{x} \in \mathbb{R}^n$ jest wektorem niewiadomych, a $\mathbf{b} \in \mathbb{R}^n$ jest wektorem prawych stron.
+\\ \\
+Metoda opiera się na przekształceniu macierzy $A$ do postaci trójkątnej górnej $U$:
+\[
+U \mathbf{x} = \mathbf{b}',
+\]
+gdzie $\mathbf{b}'$ to przekształcony wektor prawych stron. Przekształcenie to osiąga się za pomocą operacji elementarnych na wierszach, eliminując elementy poniżej głównej przekątnej za pomocą operacji elementarnych na wierszach, co pozwala rozwiązać układ za pomocą podstawienia wstecznego.
+\subsection{Wariant bez wyboru elementu głównego}
+\subsubsection{Idea matematyczna}
+Proces eliminacji w macierzy polega na zerowaniu elementów poniżej przekątnej. 
+Dla każdej kolumny \( k \), zerujemy elementy poniżej \( a_{kk} \) poprzez odjęcie odpowiednich wielokrotności wiersza \( k \) od kolejnych wierszy. 
+Mnożnik \( m_{ik} \) obliczamy jako:
+\[
+m_{ik} = \frac{A[i, k]}{A[k, k]}.
+\]
+\\
+I w kroku $k$, dla $i > k$, elementy macierzy są modyfikowane:
+\[\quad A[i, j] \gets A[i, j] - m_{ik} A[k, j], \; \forall j \geq k,
+\]
+a wektor prawych stron:
+\[
+b[i] \gets b[i] - m_{ik} b[k].
+\]
+\\ 
+Skutkiem tych działań, po $i-tym$ kroku wszystkie wartości pod przekątną w $i-tej$ kolumnie przyjmą wartość $0$. Zatem po $n-1$ krokach układ sprowadza się do łatwiejszego w rozwiązaniu układu z macierzą górnotrójkątną.
+\\\\
+Po zakończeniu eliminacji macierz $A$ jest przekształcona w macierz trójkątną górną $U$, którą rozwiązujemy przez podstawienie wstecz (zaczynając od ostatniego wiersza):
+\[
+x_n = \frac{b_n}{u_{nn}}, \quad x_i = \frac{b'_i - \sum_{j=i+1}^n u_{ij} x_j}{u_{ii}}, \; i = n-1, \dots, 1.
+\]
+\\ \\ Należy wspomnieć o problemach jakie mogą się pojawić. Gdy na diagonali pojawią się wartości bliskie zeru, prowadzi to do dzielenia przez zero i błędów numerycznych algorytmu. Rozwiązaniem tego problemu jest wariant algorytmu z częściowym wyborem elementu głównego, opisany następnie.
+
+\subsubsection{Pseudokod}
+\begin{algorithm}[H]
+\SetAlgoLined
+\setcounter{AlgoLine}{0} % Reset numeracji linii
+\KwIn{macierz rzadka $\mathbf{A}$ w formacie SparseMatrixCSC, wektor $\mathbf{b}$, rozmiar bloku $\ell$}
+\KwOut{wektor $\mathbf{x}$, rozwiązanie układu $\mathbf{Ax} = \mathbf{b}$}
+
+$n \gets \text{rozmiar macierzy } \mathbf{A}$\;
+
+$\mathbf{x} \gets$ wektor zer o rozmiarze $n$\;
+
+\For{$k \gets 1$ \textbf{to} $n-1$}{
+    $lr \gets \text{last\_row}(k, \ell, n)$\;
+    
+    $lc \gets \text{last\_column}(k, \ell, n)$\;
+    
+    \For{$i \gets k+1$ \textbf{to} $lr$}{
+        \If{$|A[k, k]| < 1 \times 10^{-12}$}{
+            \textbf{error}: Element na przekątnej $\mathbf{A}$ jest zbyt bliski zeru\;
+        }
+        
+        $m \gets \frac{A[i, k]}{A[k, k]}$\;
+        $A[i, k] \gets 0$\;  % Optymalizacja dla macierzy rzadkich
+        
+        \For{$j \gets k+1$ \textbf{to} $lc$}{
+            $A[i, j] \gets A[i, j] - m \cdot A[k, j]$\;
+        }
+        $b[i] \gets b[i] - m \cdot b[k]$\;
+    }
+}
+
+\For{$i \gets n$ \textbf{down to} $1$}{
+    $lc \gets \text{last\_column}(i, \ell, n)$\;
+    $sum \gets 0$\;
+
+    \For{$j \gets i+1$ \textbf{to} $lc$}{
+        $sum \gets sum + A[i, j] \cdot x[j]$\;
+    }
+    $x[i] \gets \frac{b[i] - sum}{A[i, i]}$\;
+}
+
+\Return{$\mathbf{x}$}\;
+\caption{Eliminacja Gaussa bez wyboru elementu głównego}
+\end{algorithm}
+
+\subsubsection{Analiza złożoności}
+
+\begin{itemize}
+
+    \item Złożoność obliczeniowa \\ \\
+Standardowa eliminacja Gaussa, stosowana do rozwiązywania układu równań liniowych, ma złożoność obliczeniową rzędu \( O(n^3) \). \\ \\
+W pierwszym etapie algorytmu, eliminacji Gaussa, celem jest przekształcenie macierzy do formy górnotrójkątnej. W tym celu musimy wyzerować około \( \frac{1}{2}n^2 \) elementów macierzy. Proces ten polega na wykonaniu operacji takich jak mnożenie wierszy przez współczynniki i ich odejmowanie, co jest procesem liniowym w odniesieniu do liczby elementów w danym wierszu. 
+\\ \\
+Dla każdego wiersza, proces wyzerowania elementów poniżej przekątnej wymaga wykonania operacji na \( n-k-1 \) wierszach, gdzie \( k \) oznacza numer aktualnie przetwarzanego wiersza. Powtarzamy ten proces dla każdego z \( n-1 \) wierszy, co skutkuje złożonością \( O(n^3) \). Dla każdego wiersza, wykonujemy operacje wyzerowania dla elementów poniżej przekątnej, a każda operacja ma złożoność liniową.
+\\ \\
+W drugim etapie, po uzyskaniu macierzy górnotrójkątnej, rozwiązujemy układ równań przez podstawianie. Dla każdego wiersza \( i \) musimy wyznaczyć zmienną \( x_i \), co wiąże się z \( O(n) \) operacjami, ponieważ w przypadku macierzy o wymiarach \( n \times n \) każda zmienna zależy od pozostałych \( n \) zmiennych. Zatem, rozwiązanie układu równań za pomocą eliminacji Gaussa ma złożoność \( O(n^2) \) w tym etapie.
+\\ \\
+Zatem, całkowita złożoność standardowej eliminacji Gaussa wynosi:
+\[
+O(n^3) \text{ (pierwszy etap)} + O(n^2) \text{ (drugi etap)} = O(n^3).
+\]
+
+\\ \\
+
+W przypadku macierzy rzadkich, gdzie liczba niezerowych elementów w każdej kolumnie wynosi co najwyżej \( \ell \), czyli \( \ell \) jest stałą, złożoność obliczeniowa zmienia się na korzyść algorytmu. W takich macierzach, liczba elementów poniżej przekątnej, które musimy wyzerować, jest proporcjonalna do \( \ell \cdot (n - 1) \), co oznacza, że liczba operacji jest znacznie mniejsza niż w przypadku macierzy pełnych. Zatem, proces eliminacji Gaussa w przypadku macierzy rzadkich ma złożoność \( O(\ell \cdot n) \), ponieważ odejmowanie wierszy odbywa się tylko dla \( \ell \) elementów w każdym wierszu.
+\\ \\
+Dodatkowo, każda operacja odejmowania ma złożoność \( O(\ell^2) \), ponieważ wymaga obliczeń dla \( \ell \) niezerowych elementów w wierszu.
+\\ \\
+Po przekształceniu macierzy do formy górnotrójkątnej, proces podstawiania i rozwiązywania układu równań nadal wymaga \( O(n) \) operacji, ponieważ \( \ell \) jest stałą. Zatem rozwiązanie układu równań po eliminacji w przypadku macierzy rzadkich ma złożoność \( O(n) \).
+\\ \\
+Zatem, całkowita złożoność obliczeniowa dla macierzy rzadkich wynosi:
+\[
+O(\ell \cdot n) \text{ (pierwszy etap)} + O(n) \text{ (drugi etap)} = O(n) \quad \text{(zakładając, że } \ell \text{ jest stałą)}.
+\]
+    \item Złożoność pamięciowa: \\ \\
+    Wymagania pamięciowe wynoszą $\textbf{O(n)}$, gdyż macierz $\mathbf{A}$ jest przechowywana z użyciem \texttt{Sparse Arrays}, co z założeń daje dostęp w czasie stałym do elementu macierzy, a wektor \mathbf{b} zajmuje także $O(n)$ pamięci.
+\end{itemize}
+
+
+\subsection{Wariant z częściowym wyborem elementu głównego}
+\subsubsection{Idea matematyczna}
+ Wariant ten rozwiązuje problem wartości bliskich zeru na przekątnej macierzy \mathbf{A}, przez częściowy wybór elementu głównego, czyli elementu macierzy znajdującego się na diagonali, którego w $k-tym$ kroku używamy do wyzerowania pozostałych w $k-tej$ kolumnie. Jest to element przez, który dzielimy chcąc uzyskać mnożnik ($A[k, k]$).
+ \\ \\ Zatem w każdym kroku wybierany jest element o największej wartości bezwzględnej w bieżącej kolumnie jako element główny:
+ \[
+ |a_{m,k}| = \max_{k \leq i \leq n} |a_{i,k}|.
+ \]
+ \\ Trzeba także zamienić wiersze tak aby ten element stał się elementem głównym, jednak zwykła zamiana jest dosyć kosztowna. Zatem może to być zastąpione przez wektor permutacji wierszy $p$. Zapamiętujemy w nim, na którym miejscu aktualnie znajduje się dany wiersz. Zatem jedyna różnica w samym algorytmie będzie taka, że zamiast odwoływać się do danego wiersza bezpośrednio, będziemy się odwoływać do jego pozycji zapisanej w wektorze permutacji. Zwróćmy uwagę na to, że zmieniając wiersze w macierzy A musimy zmieniać też poszczególne współrzędne w wektorze prawych stron -- b.
+ \\ \\ Reszta algorytmu, czyli eliminacja Gaussa i podstawienie wsteczne, jest analogiczna jak w wersji bez wyboru elementu głównego.
+\subsubsection{Pseudokod}
+\begin{algorithm}[H]
+\SetAlgoLined
+\setcounter{AlgoLine}{0} % Reset numeracji linii
+\KwIn{macierz rzadka $\mathbf{A}$ w formacie SparseMatrixCSC, wektor $\mathbf{b}$, rozmiar bloku $\ell$}
+\KwOut{wektor $\mathbf{x}$, rozwiązanie układu $\mathbf{Ax} = \mathbf{b}$}
+
+$n \gets \text{rozmiar macierzy } \mathbf{A}$\;
+
+$p \gets [1, 2, \dots, n]$ \tcp{Tablica permutacji wierszy}
+$\mathbf{x} \gets$ wektor zer o rozmiarze $n$\;
+
+\For{$k \gets 1$ \textbf{to} $n-1$}{
+    $lr \gets \text{last\_row}(k, \ell, n)$\;
+    
+    $lc \gets \text{last\_column}(k, 2\ell, n)$\;
+    
+    % Wybór elementu głównego
+    $max\_index \gets k$\;
+    
+    $max\_element \gets 0.0$\;
+    
+    \For{$i \gets k$ \textbf{to} $lr$}{
+        $current \gets |A[p[i], k]|$\;
+        
+        \If{$current > max\_element$}{
+            $max\_element \gets current$\;
+            
+            $max\_index \gets i$\;
+        }
+    }
+    
+    Zamień $p[k]$ z $p[max\_index]$ \tcp{Aktualizacja permutacji wierszy}
+    
+    % Tworzenie macierzy górnotrójkątnej
+    \For{$i \gets k+1$ \textbf{to} $lr$}{
+        \If{$|A[p[k], k]| < 1 \times 10^{-12}$}{
+            \textbf{error}: Element na przekątnej $\mathbf{A}$ jest zbyt bliski zeru\;
+        }
+        
+        $m \gets \frac{A[p[i], k]}{A[p[k], k]}$\;
+        
+        $A[p[i], k] \gets 0$\;  % Optymalizacja dla macierzy rzadkich
+        
+        \For{$j \gets k+1$ \textbf{to} $lc$}{
+            $A[p[i], j] \gets A[p[i], j] - m \cdot A[p[k], j]$\;
+        }
+        $b[p[i]] \gets b[p[i]] - m \cdot b[p[k]]$\;
+    }
+}
+
+\For{$i \gets n$ \textbf{down to} $1$}{
+    $lc \gets \text{last\_column}(p[i], 2\ell, n)$\;
+    
+    $sum \gets 0$\;
+
+    \For{$j \gets i+1$ \textbf{to} $lc$}{
+        $sum \gets sum + A[p[i], j] \cdot x[j]$\;
+    }
+    $x[i] \gets \frac{b[p[i]] - sum}{A[p[i], i]}$\;
+}
+
+\Return{$\mathbf{x}$}\;
+\caption{Eliminacja Gaussa z częściowym wyborem elementu głównego}
+\end{algorithm}
+
+\subsubsection{Analiza złożoności}
+\begin{itemize}
+    \item Złożoność obliczeniowa
+    Sytuacja wygląda tutaj analogicznie do poprzedniego wariantu. Tablica permutacji nie zwiększa złożoności obliczeniowej, ponieważ dostęp do indeksów jest w czasie stałym. \\ \\
+    Zatem tutaj również, całkowita złożoność obliczeniowa dla macierzy rzadkich wynosi:
+\[
+O(\ell \cdot n) \text{ (pierwszy etap)} + O(n) \text{ (drugi etap)} = O(n) \quad \text{(zakładając, że } \ell \text{ jest stałą)}.
+\]
+    \item Złożoność pamięciowa \\ \\
+    Wymagania pamięciowe wynoszą także $\textbf{O(n)}$, gdyż  dodatkowa tablica permutacji $\mathbf{P}$, zajmuje $O(n)$ pamięci.
+\end{itemize}
+
+\section{Rozkład LU}
+Rozkład LU polega na rozkładzie macierzy $A \in \mathbb{R}^{n \times n}$ na iloczyn dwóch macierzy:
+\[
+\mathbf{A} = \mathbf{LU},
+\]
+gdzie $\mathbf{L}$ (lower) jest macierzą dolnotrójkątną, w której zapisywane są mnożniki, a $\mathbf{U}$ (upper) jest macierzą górnotrójkątną, jak w metodzie eliminacji Gaussa. Jedna z macierzy, w tym przypadku macierz $\mathbf{L}$ ma na diagonali same jedynki, co zapewnia jednoznaczność rozkładu. Następnie układ równań $A \mathbf{x} = \mathbf{b}$ można rozwiązać w dwóch krokach:
+\begin{enumerate}
+    \item Rozwiązanie $L \mathbf{y} = \mathbf{b}$ za pomocą podstawienia w przód.
+    \item Rozwiązanie $U \mathbf{x} = \mathbf{y}$ za pomocą podstawienia wstecz.
+\end{enumerate}
+\\ Mając raz wyznaczony rozkład $\mathbf{LU}$ macierzy $\mathbf{A}$ można łatwo i mniejszym kosztem rozwiązywać układ równań dla różnych wektorów prawych stron.
+
+\subsection{Wariant bez wyboru elementu głównego}
+\subsubsection{Idea matematyczna}
+Na podstawie wcześniejszych rozważań, można zauważyć, że metoda eliminacji Gaussa tak właściwie tworzy macierz $\mathbf{U}$, a po dodaniu zapisu mnożników, zamiast zerowania, to również macierz $\mathbf{L}$. \\ \\ Macierze $\mathbf{L}$ i $\mathbf{U}$ są przechowywane w jednym obiekcie $\mathbf{A}$, co oszczędza pamięć. Po zakończeniu algorytmu macierz $\mathbf{A}$ przyjmuje postać:
+\[
+A = \begin{bmatrix}
+    u_{11} & u_{12} & \dots & u_{1n} \\
+    l_{21} & u_{22} & \dots & u_{2n} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    l_{n1} & l_{n2} & \dots & u_{nn}
+\end{bmatrix},
+\]
+gdzie elementy poniżej przekątnej reprezentują \( L \), a powyżej \( U \).
+\subsubsection{Pseudokod}
+\begin{algorithm}[H]
+\SetAlgoLined
+\setcounter{AlgoLine}{0} % Reset numeracji linii
+\KwIn{macierz rzadka $\mathbf{A}$ w formacie SparseMatrixCSC, rozmiar bloku $\ell$}
+\KwOut{macierz $\mathbf{A}$ po dekompozycji LU}
+
+$n \gets \text{rozmiar pierwszego wymiaru } \mathbf{A}$\;
+
+\For{$k \gets 1$ \textbf{to} $n-1$}{
+    $lr \gets \text{last\_row}(k, \ell, n)$\;
+    
+    $lc \gets \text{last\_column}(k, \ell, n)$\;
+    
+    \For{$i \gets k+1$ \textbf{to} $lr$}{
+        \If{$|A[k, k]| < 1 \times 10^{-12}$}{
+            \textbf{error}: Element na przekątnej $\mathbf{A}$ jest zbyt bliski zeru\;
+        }
+        
+        $m \gets \frac{A[i, k]}{A[k, k]}$\;
+        
+        $A[i, k] \gets m$\;  % Aktualizacja elementu w macierzy
+        
+        \For{$j \gets k+1$ \textbf{to} $lc$}{
+            $A[i, j] \gets A[i, j] - m \cdot A[k, j]$\;
+        }
+    }
+}
+
+\Return{$A$}\;
+\caption{Rozkład LU  macierzy A bez wyboru elementu głównego}
+\end{algorithm}
+
+\subsubsection{Analiza złożoności}
+\begin{itemize}
+    \item Złożoność obliczeniowa
+    \\ \\
+    Rozkład $\mathbf{LU}$ to praktycznie pierwszy etap algorytmu Gaussa, tylko zamiast zerować elementy pod przekątną, zapamiętywane są tam mnożniki. Niemniej jednak, nie zmienia to całkowitej złożoności.
+\\ \\
+Przy takich samych optymalizacjach otrzymujemy:
+\[
+O(\ell \cdot n) \text{ (pierwszy etap)} + O(n) \text{ (drugi etap)} = O(n) \quad \text{(zakładając, że } \ell \text{ jest stałą)}.
+\]
+    \item Złożoność pamięciowa
+    \\ \\
+    W tej metodzie wszystko dzieje się na macierzy $\mathbf{A}$, którą utrzymujemy za pomocą \texttt{Sparse Arrays}, zatem z początkowych założeń mamy złożoność $\mathbf{O(n)}$.
+\end{itemize}
+\subsection{Wariant z częściowym wyborem elementu głównego}
+\subsubsection{Idea matematyczna}
+Wariant ten jest analogiczny do odpowiadającego mu wariantu z metody eliminacji Gaussa.
+On także rozwiązuje problem wartości bliskich zeru na przekątnej macierzy \mathbf{A}, przez częściowy wybór elementu głównego.
+ \\ \\ Zatem jako element główny wybieramy:
+ \[
+ |a_{m,k}| = \max_{k \leq i \leq n} |a_{i,k}|.
+ \]
+ \\ Do zamiany wierszy w tym przypadku również używamy tablicy permutacji.
+ \\ \\ Reszta algorytmu jest analogiczna jak w wersji bez wyboru elementu głównego.
+\subsubsection{Pseudokod}
+\begin{algorithm}[H]
+\SetAlgoLined
+\setcounter{AlgoLine}{0} % Reset numeracji linii
+\KwIn{macierz rzadka $\mathbf{A}$ w formacie SparseMatrixCSC, rozmiar bloku $\ell$}
+\KwOut{macierz $\mathbf{A}$ po dekompozycji LU oraz tablica permutacji $\mathbf{p}$}
+
+$n \gets \text{rozmiar pierwszego wymiaru } \mathbf{A}$\;
+
+$p \gets [1, 2, \dots, n]$ \tcp{Tablica permutacji wierszy}
+
+\For{$k \gets 1$ \textbf{to} $n-1$}{
+    $lr \gets \text{last\_row}(k, \ell, n)$\;
+    
+    $lc \gets \text{last\_column}(k, \ell, n)$\;
+    
+    % Wybór elementu głównego
+    $max\_index \gets k$\;
+    
+    $max\_element \gets 0.0$\;
+    
+    \For{$i \gets k$ \textbf{to} $lr$}{
+        $current \gets |A[p[i], k]|$\;
+        
+        \If{$current > max\_element$}{
+            $max\_element \gets current$\;
+            
+            $max\_index \gets i$\;
+        }
+    }
+    
+    Zamień $p[k]$ z $p[max\_index]$ \tcp{Aktualizacja permutacji wierszy}
+    
+    \For{$i \gets k+1$ \textbf{to} $lr$}{
+        \If{$|A[p[k], k]| < 1 \times 10^{-12}$}{
+            \textbf{error}: Element na przekątnej $\mathbf{A}$ jest zbyt bliski zeru\;
+        }
+        
+        $m \gets \frac{A[p[i], k]}{A[p[k], k]}$\;
+        
+        $A[p[i], k] \gets m$\;  % Aktualizacja elementu w macierzy
+        
+        \For{$j \gets k+1$ \textbf{to} $lc$}{
+            $A[p[i], j] \gets A[p[i], j] - m \cdot A[p[k], j]$\;
+        }
+    }
+}
+
+\Return{$A, p$}\;
+\caption{Rozkład LU  macierzy A z częściowym wyborem elementu głównego}
+\end{algorithm}
+
+\subsubsection{Analiza złożoności}
+\begin{itemize}
+    \item Złożoność czasowa
+    \\ \\
+    Analogicznie złożoność wynosi $\mathbf{O(n)}$.
+    \item Złożoność pamięciowa
+    \\ \\
+    Analogicznie złożoność wynosi $\mathbf{O(n)}$.
+\end{itemize}
+
+
+\section{Rozwiązanie układu równań $A \mathbf{x} = \mathbf{b}$ z wykorzystaniem rozkładu LU}
+\subsection{Idea matematyczna}
+Mając rozkład $\mathbf{LU}$ macierzy $\mathbf{A}$ można rozbić układ równań $\mathbf{Ax=b}$ na dwa podukłady z macierzami trójkątnymi:
+\begin{itemize}
+    \item $ \mathbf{Ly} = \mathbf{b}$, gdzie rozwiązanie to podstawienie w przód (analogicznie jak przekształcenia wykonywane przy tworzeniu macierzy $\mathbf{U}$ z macierzy $\mathbf{A}$):
+    \[
+    y_i = b_i - \sum_{j=1}^{i-1} l_{ij} y_j, \quad i = 1, \dots, n.
+    \]
+    \item $ \mathbf{Ux} = \mathbf{y}$, gdzie rozwiązanie to podstawienie wstecz (jak w eliminacji Gaussa):
+    \[
+    x_i = \frac{y_i - \sum_{j=i+1}^n u_{ij} x_j}{u_{ii}}, \quad i = n, \dots, 1.
+    \]
+\end{itemize}
+\subsection{Pseudokod}
+\begin{algorithm}[H]
+\SetAlgoLined
+\setcounter{AlgoLine}{0} % Reset numeracji linii
+\KwIn{macierz rzadka $\mathbf{A}$ w formacie SparseMatrixCSC, wektor $\mathbf{b}$, rozmiar bloku $\ell$}
+\KwOut{Wektor $\mathbf{x}$, rozwiązanie układu $\mathbf{Ax} = \mathbf{b}$}
+
+$n \gets \text{rozmiar macierzy } \mathbf{A}$\;
+
+$y \gets$ wektor zer o rozmiarze $n$\;
+
+$x \gets$ wektor zer o rozmiarze $n$\;
+
+% Rozwiązywanie Ly = b (przez podstawianie w przód)
+\For{$i \gets 1$ \textbf{to} $n$}{
+    $sum \gets 0.0$\;
+    
+    $fc \gets \text{first\_column}(i, \ell)$\;
+    
+    \For{$j \gets fc$ \textbf{to} $i-1$}{
+        $sum \gets sum + A[i, j] \cdot y[j]$\;
+    }
+    $y[i] \gets b[i] - sum$\;
+}
+
+% Rozwiązywanie Ux = y (przez podstawianie wstecz)
+\For{$i \gets n$ \textbf{down to} $1$}{
+    $sum \gets 0.0$\;
+    
+    $lc \gets \text{last\_column}(i, \ell, n)$\;
+    
+    \For{$j \gets i+1$ \textbf{to} $lc$}{
+        $sum \gets sum + A[i, j] \cdot x[j]$\;
+    }
+    $x[i] \gets \frac{y[i] - sum}{A[i, i]}$\;
+}
+
+\Return{$x$}\;
+\caption{Rozwiązanie układu równań \mathbf{Ax = b} z wykorzystaniem rozkładu LU bez wyboru elementu głównego}
+\end{algorithm}
+
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\setcounter{AlgoLine}{0} % Reset numeracji linii
+\KwIn{macierz rzadka $\mathbf{A}$ w formacie SparseMatrixCSC, wektor $\mathbf{b}$, tablica permutacji $\mathbf{p}$, rozmiar bloku $\ell$}
+\KwOut{Wektor $\mathbf{x}$, rozwiązanie układu $\mathbf{Ax} = \mathbf{b}$}
+
+$n \gets \text{rozmiar macierzy } \mathbf{A}$\;
+
+$x \gets$ wektor zer o rozmiarze $n$\;
+
+$y \gets$ wektor zer o rozmiarze $n$\;
+
+% Rozwiązywanie Ly = b (przez podstawianie w przód)
+\For{$i \gets 1$ \textbf{to} $n$}{
+    $sum \gets 0.0$\;
+    
+    $fc \gets \text{first\_column}(p[i], \ell)$\;
+    
+    \For{$j \gets fc$ \textbf{to} $i-1$}{
+        $sum \gets sum + A[p[i], j] \cdot y[j]$\;
+    }
+    $y[i] \gets b[p[i]] - sum$\;
+}
+
+% Rozwiązywanie Ux = y (przez podstawianie wstecz)
+\For{$i \gets n$ \textbf{down to} $1$}{
+    $sum \gets 0.0$\;
+    
+    $lc \gets \text{last\_column}(p[i], \ell, n)$\;
+    
+    \For{$j \gets i+1$ \textbf{to} $lc$}{
+        $sum \gets sum + A[p[i], j] \cdot x[j]$\;
+    }
+    $x[i] \gets \frac{y[i] - sum}{A[p[i], i]}$\;
+}
+
+\Return{$x$}\;
+\caption{Rozwiązanie układu równań \mathbf{Ax = b} z wykorzystaniem rozkładu LU z częściowym wyborem elementu głównego}
+\end{algorithm}
+
+\subsection{Analiza złożoności}
+\begin{itemize}
+    \item Złożoność obliczeniowa 
+    \\ \\
+    Problem ten jest już niezależny od operacji na macierzy i sprowadza się do dwóch prostych równań, które przy opisanych wcześniej optymalizacjach będą miał≤y złożoność $\mathbf{O(n)}$.
+    \item Złożoność pamięciowa
+    Wektor prawych stron oraz macierz zajmują $\mathbf{O(n)}$.
+\end{itemize}
+
+\section{Wyniki i ich interpretacja}
+Wyniki zostały przedstawione dla macierzy, której wskaźnik uwarunkowania wynosił 10, a $\ell = 4$.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{execution_times_plot2.png}
+    \caption{Wykres przedstawiający złożoność pamięciową implementowanych algorytmów.}
+    \label{fig:zad5_f1_10}
+\end{figure}
+\\ Jak można było się spodziewać, warianty z częściowym wyborem elementu głównego mają większe zużycie, ze względu na przechowywanie wektora permutacji.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{execution_times_plot.png}
+    \caption{Wykres przedstawiający złożoność czasową implementowanych algorytmów.}
+    \label{fig:zad5_f1_10}
+\end{figure}
+
+Z wykresu widać, że algorytmy z częściowym wyborem elementu głównego są wolniejsze niż ich odpowiedniki bez  wyboru. Obie metody -- Gaussa i LU -- wypadły podobnie. Zatem jeśli rozwiązywać więcej układów z jedną macierzą, warto zrobić rozkład LU, gdyż czas wykonania kolejnych wywołań będzie mniejszy.
+\\ \\
+
+Wszystkie algorytmy zostały również przetestowane pod kątem błędów względnych, gdy wektor prawych stron $\vb$ był obliczany. Eksperymenty przeprowadzono na macierzach o wskaźniku uwarunkowania równym $10.0$ oraz z parametrem $\ell=4$. 
+
+\begin{table}[!htbp]
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline
+		Rozmiar \mathbf{A} & Metoda eliminacji Gaussa & Metoda eliminacji Gaussa z wyborem   \\ \hline
+		3000& $5.294944023095919\cdot 10^{-15}$ & $4.583789514971993\cdot 10^{-16}$   \\ \hline
+		4000& $3.941097250330561\cdot 10^{-15}$ & $4.558576358655353\cdot 10^{-16}$    \\ \hline
+		7000& $5.572015100704354\cdot 10^{-15}$ & $4.298286603514981\cdot 10^{-16}$  \\ \hline
+		10000& $5.296361445179956\cdot 10^{-15}$ & $4.485705759438765\cdot 10^{-16}$ \\ \hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline
+		Rozmiar \mathbf{A} & Metoda LU & Metoda LU z wyborem  \\ \hline
+		3000& $2.292369454680386\cdot 10^{-14}$ & $3.63977268190935\cdot 10^{-16}$  \\ \hline
+		4000& $1.9944709360505984\cdot 10^{-14}$ & $ 3.506990595628056\cdot 10^{-16}$   \\ \hline
+		7000& $2.1756038487442212\cdot 10^{-14}$ &$3.667424709454897\cdot 10^{-16}$ \\ \hline
+		10000&$1.7735465592478852\cdot 10^{-14}$ & $3.582567451682111\cdot 10^{-16}$\\ \hline
+	\end{tabular}
+\end{table}
+\\
+Widać, że algorytmy wykorzystujące częściowy wybór elementu głównego osiągnęły dokładniejsze wyniki, z błędem względnym rzędu $10^{-16}$. Dla porównania, algorytmy, które nie przeprowadzały wyboru elementu głównego, uzyskały błędy rzędu $10^{-15}$ w przypadku metody eliminacji Gaussa oraz $10^{-14}$ dla rozkładu LU.
+
+\\ \\
+Dodatkowo dla każdej z metod zostały przeprowadzone testy, dla przykładowych danych (umieszczonych przy liście zadań), gdzie sprawdzana jest poprawność algorytmów, dla różnych rozmiarów macierzy (od 16 do 500000). Każdy test weryfikuje, czy rozwiązanie układu równań \(Ax = b\) daje wektor \(x\) składający się z jedynek.
+
+\section{Wnioski}
+Dostosowanie algorytmów do struktury danych pozwoliło obniżyć złożoność z \(O(n^3)\) do liniowej, co stanowi znaczącą poprawę. Odpowiednia reprezentacja macierzy także znacznie zmniejszyła zużycie pamięci. Dlatego dokładna analiza problemu jest kluczowa, aby ominąć naiwne podejście. Dostosowanie reprezentacji danych do struktury macierzy umożliwiło przechowywanie macierzy rzędu \(10^6\), co byłoby niemożliwe w standardowej reprezentacji.
+\\ \\ 
+Warte zauważenia jest, że metody bez wyboru elementu głównego są ograniczone – nie sprawdzają się, gdy na diagonali występuje element zerowy. Natomiast algorytmy z częściowym wyborem elementu głównego charakteryzowały się większą złożonością, lecz dawały dokładniejsze i pewniejsze wyniki.
+Za to rozkład LU jest najbardziej wydajny w przypadku układów, gdzie zmiany dotyczą wyłącznie wektora prawej strony.
+
+\end{document}
